@@ -253,6 +253,9 @@
       @if (session.role !== 'Master' && activePage === 'dashboard') {
         <ng-container *ngTemplateOutlet="dashboardTemplate"></ng-container>
       }
+      @if (session.role !== 'Master' && activePage === 'charts') {
+        <ng-container *ngTemplateOutlet="chartsTemplate"></ng-container>
+      }
       @if (session.role !== 'Master' && activePage === 'income') {
         <ng-container *ngTemplateOutlet="incomeTemplate"></ng-container>
       }
@@ -277,6 +280,10 @@
                 <option [value]="dashboardPlan.planId">{{ dashboardPlan.planName }}</option>
               }
             </select>
+          </div>
+          <div class="form-group">
+            <label>Data de referência</label>
+            <input class="modern-select" type="date" [value]="dashboardReferenceDate" (change)="setDashboardReferenceDate($any($event.target).value)" />
           </div>
           <div class="form-group">
             <label>Prazo da projeção</label>
@@ -316,63 +323,267 @@
               <h2>Saldo Atual</h2>
             </div>
           </header>
-          <div class="bar-chart">
-            <div class="bar-row">
-              <span>Real</span>
-              <div><i [style.width.%]="dashboardBarWidth(plan.currentRealBalance, plan.currentRealBalance > plan.currentExpectedBalance ? plan.currentRealBalance : plan.currentExpectedBalance)"></i></div>
-              <strong>{{ plan.currentRealBalance | currency:'BRL' }}</strong>
+          <div class="premium-bars">
+            <div class="premium-bar-row real">
+              <div class="premium-bar-head">
+                <span>Real</span>
+                <strong [class.value-positive]="plan.currentRealBalance >= plan.currentExpectedBalance" [class.value-negative]="plan.currentRealBalance < plan.currentExpectedBalance">
+                  {{ plan.currentRealBalance | currency:'BRL' }}
+                </strong>
+              </div>
+              <div class="premium-bar-track">
+                <i [style.width.%]="dashboardPremiumBarWidth(plan.currentRealBalance, plan)">
+                  <span>{{ dashboardRealVsExpectedPercent(plan) | number:'1.0-0' }}%</span>
+                </i>
+              </div>
             </div>
-            <div class="bar-row expected">
-              <span>Previsto</span>
-              <div><i [style.width.%]="dashboardBarWidth(plan.currentExpectedBalance, plan.currentRealBalance > plan.currentExpectedBalance ? plan.currentRealBalance : plan.currentExpectedBalance)"></i></div>
-              <strong>{{ plan.currentExpectedBalance | currency:'BRL' }}</strong>
+
+            <div class="premium-bar-row expected">
+              <div class="premium-bar-head">
+                <span>Previsto</span>
+                <strong>{{ plan.currentExpectedBalance | currency:'BRL' }}</strong>
+              </div>
+              <div class="premium-bar-track">
+                <i style="width: 100%">
+                  <span>100%</span>
+                </i>
+              </div>
             </div>
           </div>
         </article>
 
-        <article class="card dashboard-card projection-card">
+        <article class="card dashboard-card category-composition-card">
           <header>
             <div>
-              <span>Projeção</span>
-              <h2>{{ dashboardProjectionYears }} anos</h2>
+              <span>Carteira</span>
+              <h2>Composição por Categoria</h2>
             </div>
           </header>
-          <div class="yield-row">
-            <div>
-              <span>Real projetado</span>
-              <strong [class.value-positive]="plan.realProjectionBalance >= plan.expectedProjectionBalance" [class.value-negative]="plan.realProjectionBalance < plan.expectedProjectionBalance">
-                {{ plan.realProjectionBalance | currency:'BRL' }}
-              </strong>
+          @if (plan.categoryComposition.length > 0) {
+            <apx-chart
+              [series]="dashboardCategoryChartOptions.series!"
+              [chart]="dashboardCategoryChartOptions.chart!"
+              [labels]="dashboardCategoryChartOptions.labels!"
+              [dataLabels]="dashboardCategoryChartOptions.dataLabels!"
+              [legend]="dashboardCategoryChartOptions.legend!"
+              [tooltip]="dashboardCategoryChartOptions.tooltip!"
+              [fill]="dashboardCategoryChartOptions.fill!"
+              [colors]="dashboardCategoryChartOptions.colors!">
+            </apx-chart>
+          } @else {
+            <div class="chart-empty compact">
+              <p class="empty">Nenhum saldo encontrado para compor a carteira nesta data.</p>
             </div>
-            <div>
-              <span>Previsto projetado</span>
-              <strong>{{ plan.expectedProjectionBalance | currency:'BRL' }}</strong>
-            </div>
-          </div>
+          }
         </article>
       </section>
 
-      <footer class="card dashboard-card gap-card" [class.negative]="selectedDashboardGap < 0">
-        <div>
-          <span>Gap atual</span>
-          <strong [class.value-positive]="selectedDashboardGap >= 0" [class.value-negative]="selectedDashboardGap < 0">
-            {{ selectedDashboardGap | currency:'BRL' }}
-            <i class="bi" [class.bi-arrow-up]="selectedDashboardGap >= 0" [class.bi-arrow-down]="selectedDashboardGap < 0"></i>
-          </strong>
+      <section class="card dashboard-card projection-summary-card">
+        <header>
+          <div>
+            <span>Projeção</span>
+            <h2>{{ dashboardProjectionYears }} anos desde {{ plan.projectionStartDate | date:'dd/MM/yyyy' }} até {{ plan.projectionEndDate | date:'dd/MM/yyyy' }}</h2>
+          </div>
+        </header>
+        <div class="projection-summary-grid">
+          <div>
+            <span>Real projetado</span>
+            <strong [class.value-positive]="plan.realProjectionBalance >= plan.expectedProjectionBalance" [class.value-negative]="plan.realProjectionBalance < plan.expectedProjectionBalance">
+              {{ plan.realProjectionBalance | currency:'BRL' }}
+            </strong>
+          </div>
+          <div>
+            <span>Previsto projetado</span>
+            <strong>{{ plan.expectedProjectionBalance | currency:'BRL' }}</strong>
+          </div>
+          <div>
+            <span>Diferença projetada</span>
+            <strong [class.value-positive]="selectedDashboardProjectionGap >= 0" [class.value-negative]="selectedDashboardProjectionGap < 0">
+              {{ selectedDashboardProjectionGap | currency:'BRL' }}
+              <i class="bi" [class.bi-arrow-up]="selectedDashboardProjectionGap >= 0" [class.bi-arrow-down]="selectedDashboardProjectionGap < 0"></i>
+            </strong>
+          </div>
         </div>
-        <div>
-          <span>Gap projetado em {{ dashboardProjectionYears }} anos</span>
-          <strong [class.value-positive]="selectedDashboardProjectionGap >= 0" [class.value-negative]="selectedDashboardProjectionGap < 0">
-            {{ selectedDashboardProjectionGap | currency:'BRL' }}
-            <i class="bi" [class.bi-arrow-up]="selectedDashboardProjectionGap >= 0" [class.bi-arrow-down]="selectedDashboardProjectionGap < 0"></i>
-          </strong>
-        </div>
-      </footer>
+      </section>
+
     } @else {
       <section class="card">
         <p class="empty">Nenhum plano cadastrado para exibir no dashboard.</p>
       </section>
     }
+  </section>
+</ng-template>
+
+<ng-template #chartsTemplate>
+  <section class="dashboard-grid">
+    <header class="dashboard-toolbar">
+      <div class="filters-bar">
+        <div class="form-group">
+          <label>Plano</label>
+          <select class="modern-select" [value]="selectedChartsPlanId" (change)="setChartsPlan($any($event.target).value)">
+            <option value="">Selecione</option>
+            @for (plan of selectablePlans; track plan.id) {
+              <option [value]="plan.id">{{ plan.name }}</option>
+            } @empty {
+              <option value="" disabled>Nenhum plano cadastrado</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Investimento</label>
+          <select class="modern-select" [value]="selectedChartsInvestmentId" (change)="setChartsInvestment($any($event.target).value)">
+            <option value="">Todos os investimentos</option>
+            @for (investment of selectableChartInvestments; track investment.id) {
+              <option [value]="investment.id">{{ investment.name }}</option>
+            } @empty {
+              <option value="" disabled>Nenhum investimento ativo</option>
+            }
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <section class="card dashboard-card yearly-return-card">
+      <header>
+        <div>
+          <span>Rendimento real</span>
+          <h2>Comparação ano a ano</h2>
+        </div>
+      </header>
+
+      @if (chartMonthlyReturnRows.length > 0) {
+        <div class="return-summary">
+          <div>
+            <span>Melhor mês</span>
+            <strong class="value-positive">
+              {{ chartBestMonthReturn?.percent | number:'1.2-2' }}%
+              <i class="bi bi-arrow-up"></i>
+              <small>({{ chartBestMonthReturn?.label }})</small>
+            </strong>
+          </div>
+          <div>
+            <span>Pior mês</span>
+            <strong class="value-negative">
+              {{ chartWorstMonthReturn?.percent | number:'1.2-2' }}%
+              <i class="bi bi-arrow-down"></i>
+              <small>({{ chartWorstMonthReturn?.label }})</small>
+            </strong>
+          </div>
+          <div>
+            <span>Total de meses</span>
+            <strong>{{ chartTotalReturnMonths }}</strong>
+          </div>
+        </div>
+
+        <div class="yearly-return-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Ano</th>
+                <th>Categoria</th>
+                <th>Jan</th>
+                <th>Fev</th>
+                <th>Mar</th>
+                <th>Abr</th>
+                <th>Mai</th>
+                <th>Jun</th>
+                <th>Jul</th>
+                <th>Ago</th>
+                <th>Set</th>
+                <th>Out</th>
+                <th>Nov</th>
+                <th>Dez</th>
+                <th>Ano</th>
+                <th>Acumulado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of chartMonthlyReturnRows; track row.year) {
+                <tr>
+                  <td>{{ row.year }}</td>
+                  <td><i></i>{{ row.category }}</td>
+                  @for (monthIndex of [0,1,2,3,4,5,6,7,8,9,10,11]; track monthIndex) {
+                    @if (dashboardMonthReturn(row, monthIndex) !== null) {
+                      <td [class.value-positive]="dashboardMonthReturn(row, monthIndex)! >= 0" [class.value-negative]="dashboardMonthReturn(row, monthIndex)! < 0">
+                        {{ dashboardMonthReturn(row, monthIndex) | number:'1.2-2' }}%
+                      </td>
+                    } @else {
+                      <td class="muted">-</td>
+                    }
+                  }
+                  <td [class.value-positive]="row.yearReturnPercent >= 0" [class.value-negative]="row.yearReturnPercent < 0">
+                    {{ row.yearReturnPercent | number:'1.2-2' }}%
+                  </td>
+                  <td [class.value-positive]="row.accumulatedReturnPercent >= 0" [class.value-negative]="row.accumulatedReturnPercent < 0">
+                    {{ row.accumulatedReturnPercent | number:'1.2-2' }}%
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="empty">Nenhuma medição mensal encontrada para comparar os rendimentos.</p>
+      }
+    </section>
+
+    <section class="dashboard-main charts-main">
+      <article class="card dashboard-card chart-card">
+        <header>
+          <div>
+            <span>Mensal</span>
+            <h2>Valor Previsto x Realizado</h2>
+          </div>
+        </header>
+        @if (chartRows.length > 0) {
+          <apx-chart
+            [series]="monthlyValueChartOptions.series!"
+            [chart]="monthlyValueChartOptions.chart!"
+            [xaxis]="monthlyValueChartOptions.xaxis!"
+            [yaxis]="monthlyValueChartOptions.yaxis!"
+            [dataLabels]="monthlyValueChartOptions.dataLabels!"
+            [plotOptions]="monthlyValueChartOptions.plotOptions!"
+            [grid]="monthlyValueChartOptions.grid!"
+            [tooltip]="monthlyValueChartOptions.tooltip!"
+            [legend]="monthlyValueChartOptions.legend!"
+            [fill]="monthlyValueChartOptions.fill!"
+            [colors]="monthlyValueChartOptions.colors!">
+          </apx-chart>
+        } @else {
+          <div class="chart-empty">
+            <p class="empty">Nenhuma medição mensal encontrada para este plano.</p>
+          </div>
+        }
+      </article>
+
+      <article class="card dashboard-card chart-card">
+        <header>
+          <div>
+            <span>Mensal</span>
+            <h2>% de Rendimento</h2>
+          </div>
+        </header>
+        @if (chartRows.length > 0) {
+          <apx-chart
+            [series]="monthlyYieldChartOptions.series!"
+            [chart]="monthlyYieldChartOptions.chart!"
+            [xaxis]="monthlyYieldChartOptions.xaxis!"
+            [yaxis]="monthlyYieldChartOptions.yaxis!"
+            [dataLabels]="monthlyYieldChartOptions.dataLabels!"
+            [plotOptions]="monthlyYieldChartOptions.plotOptions!"
+            [grid]="monthlyYieldChartOptions.grid!"
+            [tooltip]="monthlyYieldChartOptions.tooltip!"
+            [legend]="monthlyYieldChartOptions.legend!"
+            [fill]="monthlyYieldChartOptions.fill!"
+            [colors]="monthlyYieldChartOptions.colors!">
+          </apx-chart>
+        } @else {
+          <div class="chart-empty">
+            <p class="empty">Nenhuma medição mensal encontrada para este plano.</p>
+          </div>
+        }
+      </article>
+    </section>
   </section>
 </ng-template>
 
@@ -571,6 +782,7 @@
                   <div class="form-group">
                     <label>Investimento</label>
                     <select class="modern-select" formControlName="investmentId" [disabled]="!!editingIncomeId">
+                      <option value="">Selecione</option>
                       @for (investment of investmentsForIncomePlan; track investment.id) {
                         <option [value]="investment.id">{{ investment.name }}</option>
                       }
@@ -594,7 +806,7 @@
 
             <footer class="master-modal-footer">
               <button type="button" class="btn-secondary" (click)="closeIncomeModal()" [disabled]="loading">Cancelar</button>
-              <button type="submit" class="btn-new" [disabled]="loading || incomeForm.invalid">
+              <button type="button" class="btn-new" [disabled]="loading" (click)="saveIncome()">
                 {{ editingIncomeId ? 'Salvar Alterações' : 'Cadastrar Rendimento' }}
               </button>
             </footer>

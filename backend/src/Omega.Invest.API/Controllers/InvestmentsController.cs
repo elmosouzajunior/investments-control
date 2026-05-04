@@ -257,6 +257,14 @@ public sealed class InvestmentsController : ApiControllerBase
             return NotFound();
         }
 
+        if (await _context.InvestmentMonthlyMeasurements.AnyAsync(x =>
+                x.CompanyId == companyId &&
+                x.InvestmentId == investmentId &&
+                x.Month == request.Month))
+        {
+            return Conflict(new { message = "Já existe um rendimento cadastrado para este investimento nesta data." });
+        }
+
         var measurement = new InvestmentMonthlyMeasurement
         {
             CompanyId = companyId,

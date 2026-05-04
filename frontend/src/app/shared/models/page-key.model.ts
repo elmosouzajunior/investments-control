@@ -2,6 +2,7 @@ export type PageKey =
   | 'companies'
   | 'users'
   | 'dashboard'
+  | 'charts'
   | 'plans'
   | 'types'
   | 'institutions'
