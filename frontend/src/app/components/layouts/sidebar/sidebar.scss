@@ -1,0 +1,182 @@
+.sidebar-container {
+  background-color: #1e293b;
+  height: 100%;
+  min-height: 100vh;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  color: white;
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+
+    .brand-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .logo-box {
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        border-radius: 8px;
+        color: #ffffff;
+        background: #3b82f6;
+        box-shadow: 0 10px 18px rgba(37, 99, 235, .28);
+      }
+
+      .identity {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .company-name {
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 700;
+        font-size: 1.05rem;
+      }
+
+      .user-name {
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .78rem;
+        font-weight: 600;
+        color: #93c5fd;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+      }
+    }
+  }
+
+  .nav-menu {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .nav-link,
+    .nav-sublink {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: none;
+      border-radius: 8px;
+      color: #94a3b8;
+      background: transparent;
+      text-decoration: none;
+      transition: all .2s;
+
+      &:hover,
+      &.active {
+        background-color: #3b82f6;
+        color: white;
+      }
+    }
+
+    .nav-link {
+      justify-content: space-between;
+      padding: 12px 16px;
+
+      > span {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+      }
+    }
+
+    .nav-link-button {
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
+    }
+
+    .nav-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-icon {
+      width: 20px;
+      font-size: 1.05rem;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .nav-text {
+      font-weight: 500;
+      font-size: .95rem;
+    }
+
+    .nav-caret {
+      width: auto;
+      font-size: .85rem;
+      color: inherit;
+    }
+
+    .nav-submenu {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-left: 12px;
+    }
+
+    .nav-sublink {
+      padding: 10px 14px;
+      color: #cbd5e1;
+      border-left: 2px solid rgba(148, 163, 184, .35);
+
+      &:hover,
+      &.active {
+        background: rgba(59, 130, 246, .18);
+        color: #ffffff;
+        border-left-color: #60a5fa;
+      }
+
+      .nav-text {
+        font-size: .92rem;
+      }
+    }
+  }
+
+  .btn-logout-custom {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 8px;
+    padding: 12px;
+    color: #fca5a5;
+    background: transparent;
+    cursor: pointer;
+    transition: all .2s;
+
+    &:hover {
+      background: rgba(239, 68, 68, .1);
+      border-color: #ef4444;
+    }
+  }
+}
+
+@media (max-width: 980px) {
+  .sidebar-container {
+    height: auto;
+    min-height: auto;
+    width: 100%;
+  }
+}

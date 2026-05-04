@@ -1,0 +1,1210 @@
+@if (!session) {
+  <app-login-page
+    [form]="loginForm"
+    [loading]="loading"
+    [message]="message"
+    (submitLogin)="login()"
+  />
+} @else {
+  <app-shell
+    [session]="session"
+    [activePage]="activePage"
+    [pageTitle]="pageTitle"
+    [message]="message"
+    [messageType]="messageType"
+    [masterMenu]="menu"
+    [dashboardMenu]="dashboardMenu"
+    [cadastroMenu]="cadastroMenu"
+    [lancamentoMenu]="lancamentoMenu"
+    [dashboardOpen]="dashboardOpen"
+    [cadastrosOpen]="cadastrosOpen"
+    [lancamentosOpen]="lancamentosOpen"
+    (pageChange)="setPage($event)"
+    (dashboardToggle)="toggleDashboard()"
+    (cadastrosToggle)="toggleCadastros()"
+    (lancamentosToggle)="toggleLancamentos()"
+    (logout)="logout()"
+  >
+
+      @if (session.role === 'Master' && activePage === 'companies') {
+        <section class="list-container master-page">
+          <header class="list-header">
+            <div class="title-area">
+              <div>
+                <h1>Gestão de Empresas</h1>
+                <p class="title-meta">{{ companies.length }} cadastradas · {{ activeCompanies.length }} ativas</p>
+              </div>
+              <button type="button" class="btn-new btn-compact" (click)="openCompanyModal()">
+                <i class="bi bi-plus-lg"></i>
+                Cadastrar Empresa
+              </button>
+            </div>
+          </header>
+
+          <section class="table-card">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>CNPJ</th>
+                  <th>Status</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (company of companies; track company.id) {
+                  <tr>
+                    <td class="bold">
+                      {{ company.name }}
+                      @if (company.tradeName) {
+                        <small>{{ company.tradeName }}</small>
+                      }
+                    </td>
+                    <td>{{ company.cnpj }}</td>
+                    <td>
+                      <span class="status-badge" [class.bg-success]="company.isActive" [class.bg-danger]="!company.isActive">
+                        {{ company.isActive ? 'Ativa' : 'Inativa' }}
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn-icon" title="Editar empresa" (click)="editCompany(company)">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="empty">Nenhuma empresa cadastrada.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </section>
+
+          @if (companyModalOpen) {
+            <div class="master-modal-overlay" (click)="$event.target === $event.currentTarget && resetCompany()">
+              <section class="master-modal-card">
+                <header class="master-modal-header">
+                  <h2>{{ editingCompanyId ? 'Editar Empresa' : 'Cadastrar Empresa' }}</h2>
+                  <button type="button" class="btn-close-modal" (click)="resetCompany()" aria-label="Fechar">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </header>
+
+                <form [formGroup]="companyForm" (ngSubmit)="saveCompany()">
+                  <div class="master-modal-body">
+                    <section class="form-section">
+                      <h3>Dados da Empresa</h3>
+                      <div class="form-grid modal-form-grid">
+                        <div class="form-group">
+                          <label>Razão social</label>
+                          <input class="modern-select" formControlName="name" placeholder="Ex: Omega Investimentos" />
+                        </div>
+                        <div class="form-group">
+                          <label>Nome fantasia</label>
+                          <input class="modern-select" formControlName="tradeName" placeholder="Ex: Omega Invest" />
+                        </div>
+                        <div class="form-group">
+                          <label>CNPJ</label>
+                          <input class="modern-select" formControlName="cnpj" placeholder="00000000000000" />
+                        </div>
+                        <label class="status-check">
+                          <input type="checkbox" formControlName="isActive" />
+                          Empresa ativa
+                        </label>
+                      </div>
+                    </section>
+                  </div>
+
+                  <footer class="master-modal-footer">
+                    <button type="button" class="btn-secondary" (click)="resetCompany()" [disabled]="loading">Cancelar</button>
+                    <button type="submit" class="btn-new" [disabled]="loading || companyForm.invalid">
+                      {{ editingCompanyId ? 'Salvar Alterações' : 'Cadastrar Empresa' }}
+                    </button>
+                  </footer>
+                </form>
+              </section>
+            </div>
+          }
+        </section>
+      }
+
+      @if (session.role === 'Master' && activePage === 'users') {
+        <section class="list-container master-page">
+          <header class="list-header">
+            <div class="title-area">
+              <div>
+                <h1>Usuários da Empresa</h1>
+                <p class="title-meta">{{ users.length }} cadastrados · {{ activeCompanies.length }} empresas ativas</p>
+              </div>
+              <button type="button" class="btn-new btn-compact" (click)="openUserModal()">
+                <i class="bi bi-plus-lg"></i>
+                Cadastrar Usuário
+              </button>
+            </div>
+          </header>
+
+          <section class="table-card">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>E-mail</th>
+                  <th>Empresa</th>
+                  <th>Status</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (user of users; track user.id) {
+                  <tr>
+                    <td class="bold">{{ user.fullName }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.companyName }}</td>
+                    <td>
+                      <span class="status-badge" [class.bg-success]="user.isActive" [class.bg-danger]="!user.isActive">
+                        {{ user.isActive ? 'Ativo' : 'Inativo' }}
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn-icon" title="Editar usuário" (click)="editUser(user)">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty">Nenhum usuário cadastrado.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </section>
+
+          @if (userModalOpen) {
+            <div class="master-modal-overlay" (click)="$event.target === $event.currentTarget && resetUser()">
+              <section class="master-modal-card user-modal-card">
+                <header class="master-modal-header">
+                  <h2>{{ editingUserId ? 'Editar Usuário' : 'Cadastrar Usuário' }}</h2>
+                  <button type="button" class="btn-close-modal" (click)="resetUser()" aria-label="Fechar">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </header>
+
+                <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+                  <div class="master-modal-body">
+                    <section class="form-section">
+                      <h3>Dados de Acesso</h3>
+                      <div class="form-grid modal-form-grid">
+                        <div class="form-group">
+                          <label>Empresa</label>
+                          <select class="modern-select" formControlName="companyId">
+                            <option value="">Selecione uma empresa...</option>
+                            @for (company of activeCompanies; track company.id) {
+                              <option [value]="company.id">{{ company.name }}</option>
+                            }
+                          </select>
+                        </div>
+                        <div class="form-group">
+                          <label>Nome completo</label>
+                          <input class="modern-select" formControlName="fullName" placeholder="Ex: Ana Souza" />
+                        </div>
+                        <div class="form-group">
+                          <label>E-mail</label>
+                          <input class="modern-select" formControlName="email" type="email" placeholder="usuario@empresa.com" />
+                        </div>
+                        <div class="form-group">
+                          <label>Senha</label>
+                          <input class="modern-select" formControlName="password" type="password" placeholder="Opcional na edição" />
+                        </div>
+                        <label class="status-check">
+                          <input type="checkbox" formControlName="isActive" />
+                          Usuário ativo
+                        </label>
+                      </div>
+                    </section>
+                  </div>
+
+                  <footer class="master-modal-footer">
+                    <button type="button" class="btn-secondary" (click)="resetUser()" [disabled]="loading">Cancelar</button>
+                    <button type="submit" class="btn-new" [disabled]="loading || userForm.invalid">
+                      {{ editingUserId ? 'Salvar Alterações' : 'Cadastrar Usuário' }}
+                    </button>
+                  </footer>
+                </form>
+              </section>
+            </div>
+          }
+        </section>
+      }
+
+      @if (session.role !== 'Master' && activePage === 'plans') {
+        <ng-container *ngTemplateOutlet="plansTemplate"></ng-container>
+      }
+      @if (session.role !== 'Master' && activePage === 'types') {
+        <ng-container *ngTemplateOutlet="typesTemplate"></ng-container>
+      }
+      @if (session.role !== 'Master' && activePage === 'institutions') {
+        <ng-container *ngTemplateOutlet="institutionsTemplate"></ng-container>
+      }
+      @if (session.role !== 'Master' && activePage === 'investments') {
+        <ng-container *ngTemplateOutlet="investmentsTemplate"></ng-container>
+      }
+      @if (session.role !== 'Master' && activePage === 'dashboard') {
+        <ng-container *ngTemplateOutlet="dashboardTemplate"></ng-container>
+      }
+      @if (session.role !== 'Master' && activePage === 'income') {
+        <ng-container *ngTemplateOutlet="incomeTemplate"></ng-container>
+      }
+      @if (session.role !== 'Master' && activePage === 'withdrawals') {
+        <ng-container *ngTemplateOutlet="withdrawalTemplate"></ng-container>
+      }
+      @if (session.role !== 'Master' && activePage === 'contributions') {
+        <ng-container *ngTemplateOutlet="contributionTemplate"></ng-container>
+      }
+  </app-shell>
+}
+
+<ng-template #dashboardTemplate>
+  <section class="dashboard-grid">
+    @if (selectedDashboardPlan; as plan) {
+      <header class="dashboard-toolbar">
+        <div class="filters-bar">
+          <div class="form-group">
+            <label>Plano</label>
+            <select class="modern-select" [value]="selectedDashboardPlanId" (change)="setDashboardPlan($any($event.target).value)">
+              @for (dashboardPlan of dashboardPlans; track dashboardPlan.planId) {
+                <option [value]="dashboardPlan.planId">{{ dashboardPlan.planName }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Prazo da projeção</label>
+            <input class="modern-select" type="number" min="1" max="50" step="1" [value]="dashboardProjectionYears" (change)="setDashboardProjectionYears($any($event.target).value)" />
+          </div>
+        </div>
+      </header>
+
+      <section class="metric-grid">
+        <article class="card metric-card">
+          <span>Saldo Real</span>
+          <strong [class.value-positive]="plan.currentRealBalance >= plan.currentExpectedBalance" [class.value-negative]="plan.currentRealBalance < plan.currentExpectedBalance">
+            {{ plan.currentRealBalance | currency:'BRL' }}
+          </strong>
+        </article>
+        <article class="card metric-card">
+          <span>Saldo Previsto</span>
+          <strong>{{ plan.currentExpectedBalance | currency:'BRL' }}</strong>
+        </article>
+        <article class="card metric-card">
+          <span>Rendimento Real</span>
+          <strong [class.value-positive]="plan.realYieldPercent >= plan.expectedYieldPercent" [class.value-negative]="plan.realYieldPercent < plan.expectedYieldPercent">
+            {{ plan.realYieldPercent | number:'1.2-2' }}%
+          </strong>
+        </article>
+        <article class="card metric-card">
+          <span>Rendimento Previsto</span>
+          <strong>{{ plan.expectedYieldPercent | number:'1.2-2' }}%</strong>
+        </article>
+      </section>
+
+      <section class="dashboard-main">
+        <article class="card dashboard-card">
+          <header>
+            <div>
+              <span>Real x Previsto</span>
+              <h2>Saldo Atual</h2>
+            </div>
+          </header>
+          <div class="bar-chart">
+            <div class="bar-row">
+              <span>Real</span>
+              <div><i [style.width.%]="dashboardBarWidth(plan.currentRealBalance, plan.currentRealBalance > plan.currentExpectedBalance ? plan.currentRealBalance : plan.currentExpectedBalance)"></i></div>
+              <strong>{{ plan.currentRealBalance | currency:'BRL' }}</strong>
+            </div>
+            <div class="bar-row expected">
+              <span>Previsto</span>
+              <div><i [style.width.%]="dashboardBarWidth(plan.currentExpectedBalance, plan.currentRealBalance > plan.currentExpectedBalance ? plan.currentRealBalance : plan.currentExpectedBalance)"></i></div>
+              <strong>{{ plan.currentExpectedBalance | currency:'BRL' }}</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="card dashboard-card projection-card">
+          <header>
+            <div>
+              <span>Projeção</span>
+              <h2>{{ dashboardProjectionYears }} anos</h2>
+            </div>
+          </header>
+          <div class="yield-row">
+            <div>
+              <span>Real projetado</span>
+              <strong [class.value-positive]="plan.realProjectionBalance >= plan.expectedProjectionBalance" [class.value-negative]="plan.realProjectionBalance < plan.expectedProjectionBalance">
+                {{ plan.realProjectionBalance | currency:'BRL' }}
+              </strong>
+            </div>
+            <div>
+              <span>Previsto projetado</span>
+              <strong>{{ plan.expectedProjectionBalance | currency:'BRL' }}</strong>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <footer class="card dashboard-card gap-card" [class.negative]="selectedDashboardGap < 0">
+        <div>
+          <span>Gap atual</span>
+          <strong [class.value-positive]="selectedDashboardGap >= 0" [class.value-negative]="selectedDashboardGap < 0">
+            {{ selectedDashboardGap | currency:'BRL' }}
+            <i class="bi" [class.bi-arrow-up]="selectedDashboardGap >= 0" [class.bi-arrow-down]="selectedDashboardGap < 0"></i>
+          </strong>
+        </div>
+        <div>
+          <span>Gap projetado em {{ dashboardProjectionYears }} anos</span>
+          <strong [class.value-positive]="selectedDashboardProjectionGap >= 0" [class.value-negative]="selectedDashboardProjectionGap < 0">
+            {{ selectedDashboardProjectionGap | currency:'BRL' }}
+            <i class="bi" [class.bi-arrow-up]="selectedDashboardProjectionGap >= 0" [class.bi-arrow-down]="selectedDashboardProjectionGap < 0"></i>
+          </strong>
+        </div>
+      </footer>
+    } @else {
+      <section class="card">
+        <p class="empty">Nenhum plano cadastrado para exibir no dashboard.</p>
+      </section>
+    }
+  </section>
+</ng-template>
+
+<ng-template #plansTemplate>
+  <section class="list-container admin-page">
+    <header class="list-header">
+      <div class="title-area">
+        <div>
+          <h1>Planos de Investimento</h1>
+          <p class="title-meta">{{ plans.length }} cadastrados · {{ activePlans.length }} ativos</p>
+        </div>
+        <button type="button" class="btn-new btn-compact" (click)="openPlanModal()">
+          <i class="bi bi-plus-lg"></i>
+          Cadastrar Plano
+        </button>
+      </div>
+    </header>
+
+    <section class="table-card">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Plano</th>
+            <th>Taxa Projetada</th>
+            <th>Prazo</th>
+            <th>Status</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (plan of plans; track plan.id) {
+            <tr>
+              <td class="bold">{{ plan.name }}</td>
+              <td>{{ plan.targetAmount | number:'1.2-2' }}% ao ano</td>
+              <td>{{ (plan.targetTermYears ?? 0) | number:'1.0-1' }} anos</td>
+              <td>
+                <span class="status-badge" [class.bg-success]="plan.isActive" [class.bg-danger]="!plan.isActive">
+                  {{ plan.isActive ? 'Ativo' : 'Inativo' }}
+                </span>
+              </td>
+              <td class="text-center">
+                <button type="button" class="btn-icon" title="Editar plano" (click)="editPlan(plan)">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty">Nenhum plano cadastrado.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    @if (planModalOpen) {
+      <div class="master-modal-overlay" (click)="$event.target === $event.currentTarget && resetPlan()">
+        <section class="master-modal-card">
+          <header class="master-modal-header">
+            <h2>{{ editingPlanId ? 'Editar Plano' : 'Cadastrar Plano' }}</h2>
+            <button type="button" class="btn-close-modal" (click)="resetPlan()" aria-label="Fechar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </header>
+
+          <form [formGroup]="planForm" (ngSubmit)="savePlan()">
+            <div class="master-modal-body">
+              <section class="form-section">
+                <h3>Dados do Plano</h3>
+                <div class="form-grid modal-form-grid">
+                  <div class="form-group">
+                    <label>Nome</label>
+                    <input class="modern-select" formControlName="name" placeholder="Ex: Reserva estratégica" />
+                  </div>
+                  <div class="form-group">
+                    <label>Taxa projetada ao ano (%)</label>
+                    <input class="modern-select" formControlName="targetAmount" type="number" min="0" max="100" step="0.01" />
+                  </div>
+                  <div class="form-group">
+                    <label>Prazo (anos)</label>
+                    <input class="modern-select" formControlName="targetTermYears" type="number" min="0" max="30" step="0.1" />
+                  </div>
+                  <label class="status-check">
+                    <input type="checkbox" formControlName="isActive" />
+                    Plano ativo
+                  </label>
+                </div>
+              </section>
+            </div>
+
+            <footer class="master-modal-footer">
+              <button type="button" class="btn-secondary" (click)="resetPlan()" [disabled]="loading">Cancelar</button>
+              <button type="submit" class="btn-new" [disabled]="loading || planForm.invalid">
+                {{ editingPlanId ? 'Salvar Alterações' : 'Cadastrar Plano' }}
+              </button>
+            </footer>
+          </form>
+        </section>
+      </div>
+    }
+  </section>
+</ng-template>
+
+<ng-template #launchTemplate let-title="title">
+  <section class="card">
+    <h2>{{ title }}</h2>
+    <p class="empty">Tela de lançamento em preparação.</p>
+  </section>
+</ng-template>
+
+<ng-template #incomeTemplate>
+  <section class="list-container admin-page">
+    <header class="list-header launch-header">
+      <div class="title-area">
+        <div>
+          <h1>Rendimentos</h1>
+        </div>
+        <button type="button" class="btn-new btn-compact" [disabled]="!selectedIncomePlanId || investmentsForIncomePlan.length === 0" (click)="openIncomeModal()">
+          <i class="bi bi-plus-lg"></i>
+          Novo Rendimento
+        </button>
+      </div>
+
+      <div class="filters-bar">
+        <div class="form-group">
+          <label>Plano de investimentos</label>
+          <select class="modern-select" [value]="selectedIncomePlanId" (change)="setIncomePlan($any($event.target).value)">
+            <option value="">Selecione</option>
+            @for (plan of activePlans; track plan.id) {
+              <option [value]="plan.id">{{ plan.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (selectedIncomePlanId && investmentsForIncomePlan.length === 0) {
+        <p class="message error compact-message">Cadastre um investimento para este plano antes de lançar rendimentos.</p>
+      }
+    </header>
+
+    <section class="table-card">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Investimento</th>
+            <th>Data do saldo</th>
+            <th>Valor total disponível</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (!selectedIncomePlanId) {
+            <tr>
+              <td colspan="4" class="empty">Selecione um plano para visualizar ou lançar rendimentos.</td>
+            </tr>
+          } @else {
+            @for (measurement of incomeMeasurements; track measurement.id) {
+              <tr>
+                <td class="bold">{{ measurement.investmentName }}</td>
+                <td>{{ formatDisplayDate(measurement.month) }}</td>
+                <td>{{ measurement.marketValue | currency:'BRL' }}</td>
+                <td class="text-center actions-cell">
+                  <button type="button" class="btn-icon" title="Editar rendimento" (click)="openIncomeModal(measurement)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button type="button" class="btn-icon btn-danger-icon" title="Excluir rendimento" (click)="deleteIncome(measurement)">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="empty">Nenhum rendimento cadastrado para este plano.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </section>
+
+    @if (incomeModalOpen) {
+      <div class="master-modal-overlay" (click)="$event.target === $event.currentTarget && closeIncomeModal()">
+        <section class="master-modal-card">
+          <header class="master-modal-header">
+            <h2>{{ editingIncomeId ? 'Editar Rendimento' : 'Cadastrar Rendimento' }}</h2>
+            <button type="button" class="btn-close-modal" (click)="closeIncomeModal()" aria-label="Fechar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </header>
+
+          <form [formGroup]="incomeForm" (ngSubmit)="saveIncome()">
+            <div class="master-modal-body">
+              <section class="form-section">
+                <h3>Dados do Rendimento</h3>
+                <div class="form-grid modal-form-grid">
+                  <div class="form-group">
+                    <label>Investimento</label>
+                    <select class="modern-select" formControlName="investmentId" [disabled]="!!editingIncomeId">
+                      @for (investment of investmentsForIncomePlan; track investment.id) {
+                        <option [value]="investment.id">{{ investment.name }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Responsável</label>
+                    <input class="modern-select" [value]="selectedIncomeInvestmentResponsible" disabled />
+                  </div>
+                  <div class="form-group">
+                    <label>Data do saldo</label>
+                    <input class="modern-select" formControlName="month" type="date" />
+                  </div>
+                  <div class="form-group">
+                    <label>Valor total disponível</label>
+                    <input class="modern-select" [value]="incomeAmountDisplay" inputmode="decimal" (input)="updateIncomeAmount($any($event.target).value)" (blur)="formatIncomeAmount()" />
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <footer class="master-modal-footer">
+              <button type="button" class="btn-secondary" (click)="closeIncomeModal()" [disabled]="loading">Cancelar</button>
+              <button type="submit" class="btn-new" [disabled]="loading || incomeForm.invalid">
+                {{ editingIncomeId ? 'Salvar Alterações' : 'Cadastrar Rendimento' }}
+              </button>
+            </footer>
+          </form>
+        </section>
+      </div>
+    }
+  </section>
+</ng-template>
+
+<ng-template #withdrawalTemplate>
+  <section class="list-container admin-page">
+    <header class="list-header launch-header">
+      <div class="title-area">
+        <div>
+          <h1>Retiradas</h1>
+        </div>
+        <button type="button" class="btn-new btn-compact" [disabled]="!selectedWithdrawalPlanId || investmentsForWithdrawalPlan.length === 0" (click)="openWithdrawalModal()">
+          <i class="bi bi-plus-lg"></i>
+          Nova Retirada
+        </button>
+      </div>
+
+      <div class="filters-bar">
+        <div class="form-group">
+          <label>Plano de investimentos</label>
+          <select class="modern-select" [value]="selectedWithdrawalPlanId" (change)="setWithdrawalPlan($any($event.target).value)">
+            <option value="">Selecione</option>
+            @for (plan of activePlans; track plan.id) {
+              <option [value]="plan.id">{{ plan.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (selectedWithdrawalPlanId && investmentsForWithdrawalPlan.length === 0) {
+        <p class="message error compact-message">Cadastre um investimento para este plano antes de lançar retiradas.</p>
+      }
+    </header>
+
+    <section class="table-card">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Investimento</th>
+            <th>Data</th>
+            <th>Valor</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (!selectedWithdrawalPlanId) {
+            <tr>
+              <td colspan="4" class="empty">Selecione um plano para visualizar ou lançar retiradas.</td>
+            </tr>
+          } @else {
+            @for (operation of withdrawalOperations; track operation.id) {
+              <tr>
+                <td class="bold">{{ operation.investmentName }}</td>
+                <td>{{ formatDisplayDate(operation.operationDate) }}</td>
+                <td>{{ operation.amount | currency:'BRL' }}</td>
+                <td class="text-center actions-cell">
+                  <button type="button" class="btn-icon" title="Editar retirada" (click)="openWithdrawalModal(operation)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button type="button" class="btn-icon btn-danger-icon" title="Excluir retirada" (click)="deleteWithdrawal(operation)">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="empty">Nenhuma retirada cadastrada para este plano.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </section>
+
+    @if (withdrawalModalOpen) {
+      <div class="master-modal-overlay" (click)="$event.target === $event.currentTarget && closeWithdrawalModal()">
+        <section class="master-modal-card">
+          <header class="master-modal-header">
+            <h2>{{ editingWithdrawalId ? 'Editar Retirada' : 'Cadastrar Retirada' }}</h2>
+            <button type="button" class="btn-close-modal" (click)="closeWithdrawalModal()" aria-label="Fechar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </header>
+
+          <form [formGroup]="withdrawalForm" (ngSubmit)="saveWithdrawal()">
+            <div class="master-modal-body">
+              <section class="form-section">
+                <h3>Dados da Retirada</h3>
+                <div class="form-grid modal-form-grid">
+                  <div class="form-group">
+                    <label>Investimento</label>
+                    <select class="modern-select" formControlName="investmentId" [disabled]="!!editingWithdrawalId">
+                      @for (investment of investmentsForWithdrawalPlan; track investment.id) {
+                        <option [value]="investment.id">{{ investment.name }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Responsável</label>
+                    <input class="modern-select" [value]="selectedWithdrawalInvestmentResponsible" disabled />
+                  </div>
+                  <div class="form-group">
+                    <label>Data</label>
+                    <input class="modern-select" formControlName="operationDate" type="date" />
+                  </div>
+                  <div class="form-group">
+                    <label>Valor</label>
+                    <input class="modern-select" [value]="withdrawalAmountDisplay" inputmode="decimal" (input)="updateWithdrawalAmount($any($event.target).value)" (blur)="formatWithdrawalAmount()" />
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <footer class="master-modal-footer">
+              <button type="button" class="btn-secondary" (click)="closeWithdrawalModal()" [disabled]="loading">Cancelar</button>
+              <button type="submit" class="btn-new" [disabled]="loading || withdrawalForm.invalid">
+                {{ editingWithdrawalId ? 'Salvar Alterações' : 'Cadastrar Retirada' }}
+              </button>
+            </footer>
+          </form>
+        </section>
+      </div>
+    }
+  </section>
+</ng-template>
+
+<ng-template #contributionTemplate>
+  <section class="list-container admin-page">
+    <header class="list-header launch-header">
+      <div class="title-area">
+        <div>
+          <h1>Aportes</h1>
+        </div>
+        <button type="button" class="btn-new btn-compact" [disabled]="!selectedContributionPlanId || investmentsForContributionPlan.length === 0" (click)="openContributionModal()">
+          <i class="bi bi-plus-lg"></i>
+          Novo Aporte
+        </button>
+      </div>
+
+      <div class="filters-bar">
+        <div class="form-group">
+          <label>Plano de investimentos</label>
+          <select class="modern-select" [value]="selectedContributionPlanId" (change)="setContributionPlan($any($event.target).value)">
+            <option value="">Selecione</option>
+            @for (plan of activePlans; track plan.id) {
+              <option [value]="plan.id">{{ plan.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (selectedContributionPlanId && investmentsForContributionPlan.length === 0) {
+        <p class="message error compact-message">Cadastre um investimento para este plano antes de lançar aportes.</p>
+      }
+    </header>
+
+    <section class="table-card">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Investimento</th>
+            <th>Data</th>
+            <th>Valor</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (!selectedContributionPlanId) {
+            <tr>
+              <td colspan="4" class="empty">Selecione um plano para visualizar ou lançar aportes.</td>
+            </tr>
+          } @else {
+            @for (operation of contributionOperations; track operation.id) {
+              <tr>
+                <td class="bold">{{ operation.investmentName }}</td>
+                <td>{{ formatDisplayDate(operation.operationDate) }}</td>
+                <td>{{ operation.amount | currency:'BRL' }}</td>
+                <td class="text-center actions-cell">
+                  <button type="button" class="btn-icon" title="Editar aporte" (click)="openContributionModal(operation)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button type="button" class="btn-icon btn-danger-icon" title="Excluir aporte" (click)="deleteContribution(operation)">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="empty">Nenhum aporte cadastrado para este plano.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </section>
+
+    @if (contributionModalOpen) {
+      <div class="master-modal-overlay" (click)="$event.target === $event.currentTarget && closeContributionModal()">
+        <section class="master-modal-card">
+          <header class="master-modal-header">
+            <h2>{{ editingContributionId ? 'Editar Aporte' : 'Cadastrar Aporte' }}</h2>
+            <button type="button" class="btn-close-modal" (click)="closeContributionModal()" aria-label="Fechar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </header>
+
+          <form [formGroup]="contributionForm" (ngSubmit)="saveContribution()">
+            <div class="master-modal-body">
+              <section class="form-section">
+                <h3>Dados do Aporte</h3>
+                <div class="form-grid modal-form-grid">
+                  <div class="form-group">
+                    <label>Investimento</label>
+                    <select class="modern-select" formControlName="investmentId" [disabled]="!!editingContributionId">
+                      @for (investment of investmentsForContributionPlan; track investment.id) {
+                        <option [value]="investment.id">{{ investment.name }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Responsável</label>
+                    <input class="modern-select" [value]="selectedContributionInvestmentResponsible" disabled />
+                  </div>
+                  <div class="form-group">
+                    <label>Data</label>
+                    <input class="modern-select" formControlName="operationDate" type="date" />
+                  </div>
+                  <div class="form-group">
+                    <label>Valor</label>
+                    <input class="modern-select" [value]="contributionAmountDisplay" inputmode="decimal" (input)="updateContributionAmount($any($event.target).value)" (blur)="formatContributionAmount()" />
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <footer class="master-modal-footer">
+              <button type="button" class="btn-secondary" (click)="closeContributionModal()" [disabled]="loading">Cancelar</button>
+              <button type="submit" class="btn-new" [disabled]="loading || contributionForm.invalid">
+                {{ editingContributionId ? 'Salvar Alterações' : 'Cadastrar Aporte' }}
+              </button>
+            </footer>
+          </form>
+        </section>
+      </div>
+    }
+  </section>
+</ng-template>
+
+<ng-template #typesTemplate>
+  <section class="list-container admin-page">
+    <header class="list-header">
+      <div class="title-area">
+        <div>
+          <h1>Categorias de Investimento</h1>
+          <p class="title-meta">{{ investmentTypes.length }} cadastradas · {{ activeTypes.length }} ativas</p>
+        </div>
+        <button type="button" class="btn-new btn-compact" (click)="openTypeModal()">
+          <i class="bi bi-plus-lg"></i>
+          Cadastrar Categoria
+        </button>
+      </div>
+    </header>
+
+    <section class="table-card">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Categoria</th>
+            <th>Descrição</th>
+            <th>Status</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (type of investmentTypes; track type.id) {
+            <tr>
+              <td class="bold">{{ type.name }}</td>
+              <td>{{ type.description || 'Sem descrição' }}</td>
+              <td>
+                <span class="status-badge" [class.bg-success]="type.isActive" [class.bg-danger]="!type.isActive">
+                  {{ type.isActive ? 'Ativa' : 'Inativa' }}
+                </span>
+              </td>
+              <td class="text-center">
+                <button type="button" class="btn-icon" title="Editar categoria" (click)="editType(type)">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="empty">Nenhuma categoria cadastrada.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    @if (typeModalOpen) {
+      <div class="master-modal-overlay" (click)="$event.target === $event.currentTarget && resetType()">
+        <section class="master-modal-card">
+          <header class="master-modal-header">
+            <h2>{{ editingTypeId ? 'Editar Categoria' : 'Cadastrar Categoria' }}</h2>
+            <button type="button" class="btn-close-modal" (click)="resetType()" aria-label="Fechar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </header>
+
+          <form [formGroup]="typeForm" (ngSubmit)="saveType()">
+            <div class="master-modal-body">
+              <section class="form-section">
+                <h3>Dados da Categoria</h3>
+                <div class="form-grid modal-form-grid">
+                  <div class="form-group">
+                    <label>Nome</label>
+                    <input class="modern-select" formControlName="name" placeholder="Renda Fixa, FIIs, Fundos..." />
+                  </div>
+                  <div class="form-group">
+                    <label>Descrição</label>
+                    <input class="modern-select" formControlName="description" />
+                  </div>
+                  <label class="status-check">
+                    <input type="checkbox" formControlName="isActive" />
+                    Categoria ativa
+                  </label>
+                </div>
+              </section>
+            </div>
+
+            <footer class="master-modal-footer">
+              <button type="button" class="btn-secondary" (click)="resetType()" [disabled]="loading">Cancelar</button>
+              <button type="submit" class="btn-new" [disabled]="loading || typeForm.invalid">
+                {{ editingTypeId ? 'Salvar Alterações' : 'Cadastrar Categoria' }}
+              </button>
+            </footer>
+          </form>
+        </section>
+      </div>
+    }
+  </section>
+</ng-template>
+
+<ng-template #institutionsTemplate>
+  <section class="list-container admin-page">
+    <header class="list-header">
+      <div class="title-area">
+        <div>
+          <h1>Instituições Financeiras</h1>
+          <p class="title-meta">{{ institutions.length }} cadastradas · {{ activeInstitutions.length }} ativas</p>
+        </div>
+        <button type="button" class="btn-new btn-compact" (click)="openInstitutionModal()">
+          <i class="bi bi-plus-lg"></i>
+          Cadastrar Instituição
+        </button>
+      </div>
+    </header>
+
+    <section class="table-card">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Instituição</th>
+            <th>Status</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (institution of institutions; track institution.id) {
+            <tr>
+              <td class="bold">{{ institution.name }}</td>
+              <td>
+                <span class="status-badge" [class.bg-success]="institution.isActive" [class.bg-danger]="!institution.isActive">
+                  {{ institution.isActive ? 'Ativa' : 'Inativa' }}
+                </span>
+              </td>
+              <td class="text-center">
+                <button type="button" class="btn-icon" title="Editar instituição" (click)="editInstitution(institution)">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="empty">Nenhuma instituição cadastrada.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    @if (institutionModalOpen) {
+      <div class="master-modal-overlay" (click)="$event.target === $event.currentTarget && resetInstitution()">
+        <section class="master-modal-card">
+          <header class="master-modal-header">
+            <h2>{{ editingInstitutionId ? 'Editar Instituição' : 'Cadastrar Instituição' }}</h2>
+            <button type="button" class="btn-close-modal" (click)="resetInstitution()" aria-label="Fechar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </header>
+
+          <form [formGroup]="institutionForm" (ngSubmit)="saveInstitution()">
+            <div class="master-modal-body">
+              <section class="form-section">
+                <h3>Dados da Instituição</h3>
+                <div class="form-grid modal-form-grid">
+                  <div class="form-group">
+                    <label>Nome</label>
+                    <input class="modern-select" formControlName="name" placeholder="Ex: Banco Omega" />
+                  </div>
+                  <label class="status-check">
+                    <input type="checkbox" formControlName="isActive" />
+                    Instituição ativa
+                  </label>
+                </div>
+              </section>
+            </div>
+
+            <footer class="master-modal-footer">
+              <button type="button" class="btn-secondary" (click)="resetInstitution()" [disabled]="loading">Cancelar</button>
+              <button type="submit" class="btn-new" [disabled]="loading || institutionForm.invalid">
+                {{ editingInstitutionId ? 'Salvar Alterações' : 'Cadastrar Instituição' }}
+              </button>
+            </footer>
+          </form>
+        </section>
+      </div>
+    }
+  </section>
+</ng-template>
+
+<ng-template #investmentsTemplate>
+  <section class="list-container admin-page">
+    <header class="list-header">
+      <div class="title-area">
+        <div>
+          <h1>Investimentos</h1>
+          <p class="title-meta">{{ investments.length }} cadastrados · {{ activeInvestments.length }} ativos</p>
+        </div>
+        <button type="button" class="btn-new btn-compact" (click)="openInvestmentModal()">
+          <i class="bi bi-plus-lg"></i>
+          Cadastrar Investimento
+        </button>
+      </div>
+    </header>
+
+    <section class="table-card">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Investimento</th>
+            <th>Plano</th>
+            <th>Categoria</th>
+            <th>Instituição</th>
+            <th>Valor inicial</th>
+            <th>Status</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (investment of investments; track investment.id) {
+            <tr>
+              <td class="bold">
+                {{ investment.name }}
+                <small>Resp. {{ investment.responsibleUserName ?? 'Não definido' }}</small>
+              </td>
+              <td>{{ investment.planName }}</td>
+              <td>{{ investment.typeName }}</td>
+              <td>{{ investment.institutionName }}</td>
+              <td>{{ investment.initialAmount | currency:'BRL' }}</td>
+              <td>
+                <span class="status-badge" [class.bg-success]="investment.isActive" [class.bg-danger]="!investment.isActive">
+                  {{ investment.isActive ? 'Ativo' : 'Inativo' }}
+                </span>
+              </td>
+              <td class="text-center actions-cell">
+                <button type="button" class="btn-icon" title="Operações" (click)="selectInvestment(investment)">
+                  <i class="bi bi-list-check"></i>
+                </button>
+                <button type="button" class="btn-icon" title="Editar investimento" (click)="editInvestment(investment)">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty">Nenhum investimento cadastrado.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    @if (investmentModalOpen) {
+      <div class="master-modal-overlay" (click)="$event.target === $event.currentTarget && resetInvestment()">
+        <section class="master-modal-card investment-modal-card">
+          <header class="master-modal-header">
+            <h2>{{ editingInvestmentId ? 'Editar Investimento' : 'Cadastrar Investimento' }}</h2>
+            <button type="button" class="btn-close-modal" (click)="resetInvestment()" aria-label="Fechar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </header>
+
+          <form [formGroup]="investmentForm" (ngSubmit)="saveInvestment()">
+            <div class="master-modal-body">
+              <section class="form-section">
+                <h3>Dados do Investimento</h3>
+                <div class="form-grid modal-form-grid">
+                  <div class="form-group">
+                    <label>Plano</label>
+                    <select class="modern-select" formControlName="planId">
+                      @for (plan of activePlans; track plan.id) {
+                        <option [value]="plan.id">{{ plan.name }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Categoria</label>
+                    <select class="modern-select" formControlName="typeId">
+                      @for (type of activeTypes; track type.id) {
+                        <option [value]="type.id">{{ type.name }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Instituição</label>
+                    <select class="modern-select" formControlName="institutionId">
+                      @for (institution of activeInstitutions; track institution.id) {
+                        <option [value]="institution.id">{{ institution.name }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Responsável</label>
+                    <select class="modern-select" formControlName="responsibleUserId">
+                      <option value="">Selecione</option>
+                      @for (user of responsibleUsers; track user.id) {
+                        <option [value]="user.id">{{ user.fullName }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Nome</label>
+                    <input class="modern-select" formControlName="name" />
+                  </div>
+                  <div class="form-group">
+                    <label>Ticker</label>
+                    <input class="modern-select" formControlName="ticker" />
+                  </div>
+                  <div class="form-group">
+                    <label>Valor inicial</label>
+                    <input class="modern-select" [value]="initialAmountDisplay" inputmode="decimal" (input)="updateInitialAmount($any($event.target).value)" (blur)="formatInitialAmount()" />
+                  </div>
+                  <div class="form-group">
+                    <label>Data inicial</label>
+                    <input class="modern-select" formControlName="startDate" type="date" />
+                  </div>
+                  <div class="form-group form-group-wide">
+                    <label>Observações</label>
+                    <input class="modern-select" formControlName="notes" />
+                  </div>
+                  <label class="status-check">
+                    <input type="checkbox" formControlName="isActive" />
+                    Investimento ativo
+                  </label>
+                </div>
+              </section>
+            </div>
+
+            <footer class="master-modal-footer">
+              <button type="button" class="btn-secondary" (click)="resetInvestment()" [disabled]="loading">Cancelar</button>
+              <button type="submit" class="btn-new" [disabled]="loading || investmentForm.invalid">
+                {{ editingInvestmentId ? 'Salvar Alterações' : 'Cadastrar Investimento' }}
+              </button>
+            </footer>
+          </form>
+        </section>
+      </div>
+    }
+
+    @if (selectedInvestment) {
+      <section class="split">
+      <article class="card">
+        <h2>Operações de {{ selectedInvestment.name }}</h2>
+        <form [formGroup]="operationForm" (ngSubmit)="saveOperation()" class="form-stack">
+          <label>Tipo<select formControlName="type"><option value="Contribution">Aporte</option><option value="Withdrawal">Retirada</option><option value="Income">Rendimento</option><option value="Fee">Taxa</option><option value="Tax">Imposto</option><option value="Adjustment">Ajuste</option></select></label>
+          <label>Data<input formControlName="operationDate" type="date" /></label>
+          <label>Valor<input formControlName="amount" type="number" /></label>
+          <label>Descrição<input formControlName="description" /></label>
+          <button type="submit">Adicionar operação</button>
+        </form>
+        <div class="mini-list">@for (op of operations; track op.id) {<p>{{ op.operationDate }} · {{ op.type }} · {{ op.amount | currency:'BRL' }}</p>} @empty {<p class="empty">Sem operações.</p>}</div>
+      </article>
+      <article class="card">
+        <h2>Medição mensal</h2>
+        <form [formGroup]="measurementForm" (ngSubmit)="saveMeasurement()" class="form-stack">
+          <label>Mês<input formControlName="month" type="date" /></label>
+          <label>Valor de mercado<input formControlName="marketValue" type="number" /></label>
+          <label>Rendimento<input formControlName="incomeAmount" type="number" /></label>
+          <label>Observações<input formControlName="notes" /></label>
+          <button type="submit">Adicionar medição</button>
+        </form>
+        <div class="mini-list">@for (m of measurements; track m.id) {<p>{{ m.month }} · Mercado {{ m.marketValue | currency:'BRL' }} · Rend. {{ m.incomeAmount | currency:'BRL' }}</p>} @empty {<p class="empty">Sem medições.</p>}</div>
+      </article>
+      </section>
+    }
+  </section>
+</ng-template>

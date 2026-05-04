@@ -1,0 +1,48 @@
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+}
+
+.content {
+  padding: 1.1rem;
+  display: grid;
+  align-content: start;
+  gap: .85rem;
+}
+
+.topbar {
+  min-height: 62px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: .85rem 1rem;
+  background: #fff;
+  border: 1px solid #dce4ef;
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+
+  span {
+    color: #68768d;
+    font-size: .8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: .2rem 0 0;
+    font-size: 1.45rem;
+  }
+}
+
+@media (max-width: 980px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}

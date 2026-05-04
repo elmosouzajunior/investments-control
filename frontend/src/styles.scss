@@ -1,0 +1,84 @@
+/* You can add global styles to this file, and also import other style files */
+body {
+  margin: 0;
+  color: #14213d;
+  background: #eef2f7;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+input,
+select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ccd6e3;
+  border-radius: 8px;
+  padding: .82rem .9rem;
+  color: #14213d;
+  background: #fff;
+}
+
+button[type="submit"],
+.table-list button,
+.ghost {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: .72rem 1rem;
+  font-weight: 800;
+  color: #fff;
+  background: #2f6fed;
+}
+
+button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.form-stack,
+.grid-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-stack label,
+.grid-form label {
+  display: grid;
+  gap: .45rem;
+  color: #344563;
+  font-weight: 700;
+  font-size: .92rem;
+}
+
+.check {
+  display: flex !important;
+  align-items: center;
+  gap: .55rem !important;
+}
+
+.check input {
+  width: auto;
+}
+
+.message {
+  margin: 0;
+  border-radius: 8px;
+  padding: .85rem 1rem;
+  color: #14532d;
+  background: #dcfce7;
+  font-weight: 800;
+}
+
+.message.error {
+  color: #991b1b;
+  background: #fee2e2;
+}

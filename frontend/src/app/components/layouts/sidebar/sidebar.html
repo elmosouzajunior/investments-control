@@ -1,0 +1,89 @@
+<aside class="sidebar-container">
+  <div class="sidebar-header">
+    <div class="brand-area">
+      <div class="logo-box">
+        <i class="bi bi-graph-up-arrow"></i>
+      </div>
+      <div class="identity">
+        <span class="company-name">{{ session.role === 'Master' ? 'Omega Invest' : session.companyName }}</span>
+        <span class="user-name">{{ session.role === 'Master' ? 'MASTER' : session.fullName }}</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav-menu">
+    @if (session.role === 'Master') {
+      @for (item of masterMenu; track item.key) {
+        <button type="button" class="nav-link" [class.active]="activePage === item.key" (click)="pageChange.emit(item.key)">
+          <i class="bi nav-icon" [class]="item.icon"></i>
+          <span class="nav-text">{{ item.label }}</span>
+        </button>
+      }
+    } @else {
+      <div class="nav-group" [class.expanded]="dashboardOpen">
+        <button type="button" class="nav-link nav-link-button" [class.active]="dashboardOpen" (click)="dashboardToggle.emit()">
+          <span>
+            <i class="bi bi-speedometer2 nav-icon"></i>
+            <span class="nav-text">Dashboard</span>
+          </span>
+          <i class="bi nav-caret" [class]="dashboardOpen ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+        </button>
+        @if (dashboardOpen) {
+          <div class="nav-submenu">
+          @for (item of dashboardMenu; track item.key) {
+            <button type="button" class="nav-sublink" [class.active]="activePage === item.key" (click)="pageChange.emit(item.key)">
+              <i class="bi nav-icon" [class]="item.icon"></i>
+              <span class="nav-text">{{ item.label }}</span>
+            </button>
+          }
+          </div>
+        }
+      </div>
+
+      <div class="nav-group" [class.expanded]="cadastrosOpen">
+        <button type="button" class="nav-link nav-link-button" [class.active]="cadastrosOpen" (click)="cadastrosToggle.emit()">
+          <span>
+            <i class="bi bi-folder2-open nav-icon"></i>
+            <span class="nav-text">Cadastros</span>
+          </span>
+          <i class="bi nav-caret" [class]="cadastrosOpen ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+        </button>
+        @if (cadastrosOpen) {
+          <div class="nav-submenu">
+          @for (item of cadastroMenu; track item.key) {
+            <button type="button" class="nav-sublink" [class.active]="activePage === item.key" (click)="pageChange.emit(item.key)">
+              <i class="bi nav-icon" [class]="item.icon"></i>
+              <span class="nav-text">{{ item.label }}</span>
+            </button>
+          }
+          </div>
+        }
+      </div>
+
+      <div class="nav-group" [class.expanded]="lancamentosOpen">
+        <button type="button" class="nav-link nav-link-button" [class.active]="lancamentosOpen" (click)="lancamentosToggle.emit()">
+          <span>
+            <i class="bi bi-journal-arrow-up nav-icon"></i>
+            <span class="nav-text">Lançamentos</span>
+          </span>
+          <i class="bi nav-caret" [class]="lancamentosOpen ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+        </button>
+        @if (lancamentosOpen) {
+          <div class="nav-submenu">
+          @for (item of lancamentoMenu; track item.key) {
+            <button type="button" class="nav-sublink" [class.active]="activePage === item.key" (click)="pageChange.emit(item.key)">
+              <i class="bi nav-icon" [class]="item.icon"></i>
+              <span class="nav-text">{{ item.label }}</span>
+            </button>
+          }
+          </div>
+        }
+      </div>
+    }
+  </nav>
+
+  <button type="button" class="btn-logout-custom" (click)="logout.emit()">
+    <i class="bi bi-box-arrow-right nav-icon"></i>
+    <span class="nav-text">Sair do Sistema</span>
+  </button>
+</aside>

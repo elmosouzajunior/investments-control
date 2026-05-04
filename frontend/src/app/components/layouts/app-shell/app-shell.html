@@ -1,0 +1,34 @@
+<div class="shell">
+  <app-sidebar
+    [session]="session"
+    [activePage]="activePage"
+    [masterMenu]="masterMenu"
+    [dashboardMenu]="dashboardMenu"
+    [cadastroMenu]="cadastroMenu"
+    [lancamentoMenu]="lancamentoMenu"
+    [dashboardOpen]="dashboardOpen"
+    [cadastrosOpen]="cadastrosOpen"
+    [lancamentosOpen]="lancamentosOpen"
+    (pageChange)="pageChange.emit($event)"
+    (dashboardToggle)="dashboardToggle.emit()"
+    (cadastrosToggle)="cadastrosToggle.emit()"
+    (lancamentosToggle)="lancamentosToggle.emit()"
+    (logout)="logout.emit()"
+  />
+
+  <main class="content">
+    <header class="topbar">
+      <div>
+        <span>{{ session.role === 'Master' ? 'Área Master' : 'Área da Empresa' }}</span>
+        <h1>{{ pageTitle }}</h1>
+      </div>
+      <strong>{{ session.fullName }}</strong>
+    </header>
+
+    @if (message) {
+      <p class="message" [class.error]="messageType === 'error'">{{ message }}</p>
+    }
+
+    <ng-content />
+  </main>
+</div>
