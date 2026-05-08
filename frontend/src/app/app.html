@@ -676,7 +676,7 @@
 
             <footer class="master-modal-footer">
               <button type="button" class="btn-secondary" (click)="resetPlan()" [disabled]="loading">Cancelar</button>
-              <button type="submit" class="btn-new" [disabled]="loading || planForm.invalid">
+              <button type="button" class="btn-new" (click)="savePlan()">
                 {{ editingPlanId ? 'Salvar Alterações' : 'Cadastrar Plano' }}
               </button>
             </footer>
@@ -928,7 +928,7 @@
 
             <footer class="master-modal-footer">
               <button type="button" class="btn-secondary" (click)="closeWithdrawalModal()" [disabled]="loading">Cancelar</button>
-              <button type="submit" class="btn-new" [disabled]="loading || withdrawalForm.invalid">
+              <button type="button" class="btn-new" (click)="saveWithdrawal()">
                 {{ editingWithdrawalId ? 'Salvar Alterações' : 'Cadastrar Retirada' }}
               </button>
             </footer>
@@ -1050,7 +1050,7 @@
 
             <footer class="master-modal-footer">
               <button type="button" class="btn-secondary" (click)="closeContributionModal()" [disabled]="loading">Cancelar</button>
-              <button type="submit" class="btn-new" [disabled]="loading || contributionForm.invalid">
+              <button type="button" class="btn-new" (click)="saveContribution()">
                 {{ editingContributionId ? 'Salvar Alterações' : 'Cadastrar Aporte' }}
               </button>
             </footer>
@@ -1144,7 +1144,7 @@
 
             <footer class="master-modal-footer">
               <button type="button" class="btn-secondary" (click)="resetType()" [disabled]="loading">Cancelar</button>
-              <button type="submit" class="btn-new" [disabled]="loading || typeForm.invalid">
+              <button type="button" class="btn-new" (click)="saveType()">
                 {{ editingTypeId ? 'Salvar Alterações' : 'Cadastrar Categoria' }}
               </button>
             </footer>
@@ -1232,7 +1232,7 @@
 
             <footer class="master-modal-footer">
               <button type="button" class="btn-secondary" (click)="resetInstitution()" [disabled]="loading">Cancelar</button>
-              <button type="submit" class="btn-new" [disabled]="loading || institutionForm.invalid">
+              <button type="button" class="btn-new" (click)="saveInstitution()">
                 {{ editingInstitutionId ? 'Salvar Alterações' : 'Cadastrar Instituição' }}
               </button>
             </footer>
@@ -1383,7 +1383,7 @@
 
             <footer class="master-modal-footer">
               <button type="button" class="btn-secondary" (click)="resetInvestment()" [disabled]="loading">Cancelar</button>
-              <button type="submit" class="btn-new" [disabled]="loading || investmentForm.invalid">
+              <button type="button" class="btn-new" (click)="saveInvestment()">
                 {{ editingInvestmentId ? 'Salvar Alterações' : 'Cadastrar Investimento' }}
               </button>
             </footer>
@@ -1401,7 +1401,7 @@
           <label>Data<input formControlName="operationDate" type="date" /></label>
           <label>Valor<input formControlName="amount" type="number" /></label>
           <label>Descrição<input formControlName="description" /></label>
-          <button type="submit">Adicionar operação</button>
+          <button type="button" (click)="saveOperation()">Adicionar operação</button>
         </form>
         <div class="mini-list">@for (op of operations; track op.id) {<p>{{ op.operationDate }} · {{ op.type }} · {{ op.amount | currency:'BRL' }}</p>} @empty {<p class="empty">Sem operações.</p>}</div>
       </article>
@@ -1412,7 +1412,7 @@
           <label>Valor de mercado<input formControlName="marketValue" type="number" /></label>
           <label>Rendimento<input formControlName="incomeAmount" type="number" /></label>
           <label>Observações<input formControlName="notes" /></label>
-          <button type="submit">Adicionar medição</button>
+          <button type="button" (click)="saveMeasurement()">Adicionar medição</button>
         </form>
         <div class="mini-list">@for (m of measurements; track m.id) {<p>{{ m.month }} · Mercado {{ m.marketValue | currency:'BRL' }} · Rend. {{ m.incomeAmount | currency:'BRL' }}</p>} @empty {<p class="empty">Sem medições.</p>}</div>
       </article>

@@ -716,17 +716,31 @@ export class App {
   }
 
   async savePlan() {
-    const body = this.planForm.getRawValue();
-    if (this.editingPlanId) {
-      await this.save('/plans', this.editingPlanId, body);
-      this.plans = await this.get<Plan[]>('/plans');
-    } else {
-      const created = await this.create<Plan>('/plans', body);
-      this.plans = [...this.plans, created].sort((a, b) => a.name.localeCompare(b.name));
-      this.showMessage('Registro cadastrado.');
+    if (this.planForm.invalid) {
+      this.planForm.markAllAsTouched();
+      this.showMessage('Preencha os dados do plano corretamente.', 'error');
+      this.cdr.detectChanges();
+      return;
     }
-    this.resetPlan();
-    this.cdr.detectChanges();
+
+    const body = this.planForm.getRawValue();
+    this.loading = true;
+    try {
+      if (this.editingPlanId) {
+        await this.save('/plans', this.editingPlanId, body);
+        this.plans = await this.get<Plan[]>('/plans');
+      } else {
+        const created = await this.create<Plan>('/plans', body);
+        this.plans = [...this.plans, created].sort((a, b) => a.name.localeCompare(b.name));
+        this.showMessage('Registro cadastrado.');
+      }
+      this.resetPlan();
+    } catch (error) {
+      this.showMessage(this.errorMessage(error, 'Não foi possível salvar o plano.'), 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   openPlanModal() {
@@ -748,17 +762,31 @@ export class App {
   }
 
   async saveType() {
-    const body = this.typeForm.getRawValue();
-    if (this.editingTypeId) {
-      await this.save('/investment-types', this.editingTypeId, body);
-      this.investmentTypes = await this.get<SimpleItem[]>('/investment-types');
-    } else {
-      const created = await this.create<SimpleItem>('/investment-types', body);
-      this.investmentTypes = [...this.investmentTypes, created].sort((a, b) => a.name.localeCompare(b.name));
-      this.showMessage('Registro cadastrado.');
+    if (this.typeForm.invalid) {
+      this.typeForm.markAllAsTouched();
+      this.showMessage('Preencha o nome da categoria para salvar.', 'error');
+      this.cdr.detectChanges();
+      return;
     }
-    this.resetType();
-    this.cdr.detectChanges();
+
+    const body = this.typeForm.getRawValue();
+    this.loading = true;
+    try {
+      if (this.editingTypeId) {
+        await this.save('/investment-types', this.editingTypeId, body);
+        this.investmentTypes = await this.get<SimpleItem[]>('/investment-types');
+      } else {
+        const created = await this.create<SimpleItem>('/investment-types', body);
+        this.investmentTypes = [...this.investmentTypes, created].sort((a, b) => a.name.localeCompare(b.name));
+        this.showMessage('Registro cadastrado.');
+      }
+      this.resetType();
+    } catch (error) {
+      this.showMessage(this.errorMessage(error, 'Não foi possível salvar a categoria.'), 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   openTypeModal() {
@@ -780,7 +808,15 @@ export class App {
   }
 
   async saveInstitution() {
+    if (this.institutionForm.invalid) {
+      this.institutionForm.markAllAsTouched();
+      this.showMessage('Preencha o nome da instituição para salvar.', 'error');
+      this.cdr.detectChanges();
+      return;
+    }
+
     const body = this.institutionForm.getRawValue();
+    this.loading = true;
     try {
       if (this.editingInstitutionId) {
         await this.save('/institutions', this.editingInstitutionId, body);
@@ -791,9 +827,11 @@ export class App {
         this.showMessage('Registro cadastrado.');
       }
       this.resetInstitution();
-      this.cdr.detectChanges();
     } catch (error) {
       this.showMessage(this.errorMessage(error, 'Não foi possível salvar a instituição financeira.'), 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -1113,9 +1151,24 @@ export class App {
   }
 
   async saveInvestment() {
-    await this.save('/investments', this.editingInvestmentId, this.investmentForm.getRawValue());
-    this.resetInvestment();
-    await this.loadInvestments();
+    if (this.investmentForm.invalid) {
+      this.investmentForm.markAllAsTouched();
+      this.showMessage('Preencha plano, categoria, instituição, responsável, nome e data inicial para salvar o investimento.', 'error');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.loading = true;
+    try {
+      await this.save('/investments', this.editingInvestmentId, this.investmentForm.getRawValue());
+      this.resetInvestment();
+      await this.loadInvestments();
+    } catch (error) {
+      this.showMessage(this.errorMessage(error, 'Não foi possível salvar o investimento.'), 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   openInvestmentModal() {
@@ -1222,7 +1275,12 @@ export class App {
   }
 
   async saveContribution() {
-    if (this.contributionForm.invalid) return;
+    if (this.contributionForm.invalid) {
+      this.contributionForm.markAllAsTouched();
+      this.showMessage('Preencha investimento, data e valor para salvar o aporte.', 'error');
+      this.cdr.detectChanges();
+      return;
+    }
 
     const formValue = this.contributionForm.getRawValue();
     const body = {
@@ -1232,19 +1290,27 @@ export class App {
       description: null
     };
 
-    if (this.editingContributionId && this.editingContributionInvestmentId) {
-      await firstValueFrom(this.http.put(
-        `${this.apiUrl}/investments/${this.editingContributionInvestmentId}/operations/${this.editingContributionId}`,
-        body,
-        { headers: this.headers() }));
-      this.showMessage('Aporte atualizado.');
-    } else {
-      await this.create<Operation>(`/investments/${formValue.investmentId}/operations`, body);
-      this.showMessage('Aporte cadastrado.');
-    }
+    this.loading = true;
+    try {
+      if (this.editingContributionId && this.editingContributionInvestmentId) {
+        await firstValueFrom(this.http.put(
+          `${this.apiUrl}/investments/${this.editingContributionInvestmentId}/operations/${this.editingContributionId}`,
+          body,
+          { headers: this.headers() }));
+        this.showMessage('Aporte atualizado.');
+      } else {
+        await this.create<Operation>(`/investments/${formValue.investmentId}/operations`, body);
+        this.showMessage('Aporte cadastrado.');
+      }
 
-    this.closeContributionModal();
-    await this.loadContributionOperations();
+      this.closeContributionModal();
+      await this.loadContributionOperations();
+    } catch (error) {
+      this.showMessage(this.errorMessage(error, 'Não foi possível salvar o aporte.'), 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   async deleteContribution(operation: ContributionOperation) {
@@ -1287,7 +1353,12 @@ export class App {
   }
 
   async saveWithdrawal() {
-    if (this.withdrawalForm.invalid) return;
+    if (this.withdrawalForm.invalid) {
+      this.withdrawalForm.markAllAsTouched();
+      this.showMessage('Preencha investimento, data e valor para salvar a retirada.', 'error');
+      this.cdr.detectChanges();
+      return;
+    }
 
     const formValue = this.withdrawalForm.getRawValue();
     const body = {
@@ -1297,19 +1368,27 @@ export class App {
       description: null
     };
 
-    if (this.editingWithdrawalId && this.editingWithdrawalInvestmentId) {
-      await firstValueFrom(this.http.put(
-        `${this.apiUrl}/investments/${this.editingWithdrawalInvestmentId}/operations/${this.editingWithdrawalId}`,
-        body,
-        { headers: this.headers() }));
-      this.showMessage('Retirada atualizada.');
-    } else {
-      await this.create<Operation>(`/investments/${formValue.investmentId}/operations`, body);
-      this.showMessage('Retirada cadastrada.');
-    }
+    this.loading = true;
+    try {
+      if (this.editingWithdrawalId && this.editingWithdrawalInvestmentId) {
+        await firstValueFrom(this.http.put(
+          `${this.apiUrl}/investments/${this.editingWithdrawalInvestmentId}/operations/${this.editingWithdrawalId}`,
+          body,
+          { headers: this.headers() }));
+        this.showMessage('Retirada atualizada.');
+      } else {
+        await this.create<Operation>(`/investments/${formValue.investmentId}/operations`, body);
+        this.showMessage('Retirada cadastrada.');
+      }
 
-    this.closeWithdrawalModal();
-    await this.loadWithdrawalOperations();
+      this.closeWithdrawalModal();
+      await this.loadWithdrawalOperations();
+    } catch (error) {
+      this.showMessage(this.errorMessage(error, 'Não foi possível salvar a retirada.'), 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   async deleteWithdrawal(operation: ContributionOperation) {
@@ -1412,14 +1491,46 @@ export class App {
 
   async saveOperation() {
     if (!this.selectedInvestment) return;
-    await this.post(`/investments/${this.selectedInvestment.id}/operations`, this.operationForm.getRawValue());
-    await this.selectInvestment(this.selectedInvestment);
+    if (this.operationForm.invalid) {
+      this.operationForm.markAllAsTouched();
+      this.showMessage('Preencha tipo, data e valor para adicionar a operação.', 'error');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.loading = true;
+    try {
+      await this.post(`/investments/${this.selectedInvestment.id}/operations`, this.operationForm.getRawValue());
+      await this.selectInvestment(this.selectedInvestment);
+      this.showMessage('Operação adicionada.');
+    } catch (error) {
+      this.showMessage(this.errorMessage(error, 'Não foi possível adicionar a operação.'), 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   async saveMeasurement() {
     if (!this.selectedInvestment) return;
-    await this.post(`/investments/${this.selectedInvestment.id}/measurements`, this.measurementForm.getRawValue());
-    await this.selectInvestment(this.selectedInvestment);
+    if (this.measurementForm.invalid) {
+      this.measurementForm.markAllAsTouched();
+      this.showMessage('Preencha mês e valor de mercado para adicionar a medição.', 'error');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.loading = true;
+    try {
+      await this.post(`/investments/${this.selectedInvestment.id}/measurements`, this.measurementForm.getRawValue());
+      await this.selectInvestment(this.selectedInvestment);
+      this.showMessage('Medição adicionada.');
+    } catch (error) {
+      this.showMessage(this.errorMessage(error, 'Não foi possível adicionar a medição.'), 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   private async save(path: string, id: string | null, body: unknown) {
