@@ -198,7 +198,7 @@ export class App {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly apiUrl = 'http://localhost:5241/api';
+  private readonly apiUrl = window.omegaInvestConfig?.apiUrl ?? 'http://localhost:5241/api';
 
   session: Session | null = this.readSession();
   activePage: PageKey = this.session?.role === 'Master' ? 'companies' : 'dashboard';
