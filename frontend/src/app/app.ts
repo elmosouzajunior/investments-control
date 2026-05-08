@@ -638,9 +638,24 @@ export class App {
   }
 
   async saveCompany() {
-    await this.save('/companies', this.editingCompanyId, this.companyForm.getRawValue());
-    this.resetCompany();
-    await this.loadMaster();
+    if (this.companyForm.invalid) {
+      this.companyForm.markAllAsTouched();
+      this.showMessage('Preencha razão social e CNPJ para salvar a empresa.', 'error');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.loading = true;
+    try {
+      await this.save('/companies', this.editingCompanyId, this.companyForm.getRawValue());
+      this.resetCompany();
+      await this.loadMaster();
+    } catch (error) {
+      this.showMessage(this.errorMessage(error, 'Não foi possível salvar a empresa.'), 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   openCompanyModal() {
