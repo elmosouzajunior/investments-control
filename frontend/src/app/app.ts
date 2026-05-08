@@ -677,9 +677,24 @@ export class App {
   }
 
   async saveUser() {
-    await this.save('/users', this.editingUserId, this.userForm.getRawValue());
-    this.resetUser();
-    await this.loadMaster();
+    if (this.userForm.invalid) {
+      this.userForm.markAllAsTouched();
+      this.showMessage('Preencha empresa, nome e e-mail para salvar o usuário.', 'error');
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.loading = true;
+    try {
+      await this.save('/users', this.editingUserId, this.userForm.getRawValue());
+      this.resetUser();
+      await this.loadMaster();
+    } catch (error) {
+      this.showMessage(this.errorMessage(error, 'Não foi possível salvar o usuário.'), 'error');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   openUserModal() {
