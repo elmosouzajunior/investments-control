@@ -118,7 +118,7 @@
 
                   <footer class="master-modal-footer">
                     <button type="button" class="btn-secondary" (click)="resetCompany()" [disabled]="loading">Cancelar</button>
-                    <button type="submit" class="btn-new" [disabled]="loading">
+                    <button type="button" class="btn-new" (click)="saveCompany()">
                       {{ editingCompanyId ? 'Salvar Alterações' : 'Cadastrar Empresa' }}
                     </button>
                   </footer>
