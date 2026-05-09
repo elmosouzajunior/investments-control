@@ -382,7 +382,7 @@
         <header>
           <div>
             <span>Projeção</span>
-            <h2>{{ dashboardProjectionYears }} anos desde {{ plan.projectionStartDate | date:'dd/MM/yyyy' }} até {{ plan.projectionEndDate | date:'dd/MM/yyyy' }}</h2>
+            <h2>{{ dashboardProjectionYears }} anos desde {{ formatDisplayDate(plan.projectionStartDate) }} até {{ formatDisplayDate(plan.projectionEndDate) }}</h2>
           </div>
         </header>
         <div class="projection-summary-grid">

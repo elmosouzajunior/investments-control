@@ -739,6 +739,8 @@ button:disabled {
   border-radius: 12px;
   box-shadow: 0 2px 5px rgba(15, 23, 42, .04);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 
 .form-card {
@@ -1014,6 +1016,11 @@ button:disabled {
   }
 }
 
+apx-chart {
+  display: block;
+  min-width: 0;
+}
+
 .text-center {
   text-align: center;
 }
@@ -1098,10 +1105,43 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .content,
+  .list-container,
+  .dashboard-grid,
+  .card,
+  .dashboard-card,
+  .table-card {
+    min-width: 0;
+  }
+
+  .dashboard-main,
+  .charts-main,
+  .projection-summary-grid,
+  .return-summary,
+  .filters-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-toolbar {
+    display: block;
+  }
+
+  .filters-bar {
+    max-width: none;
+  }
+
   .table-list article,
   .topbar {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .modern-table {
+    min-width: 680px;
+  }
+
+  .yearly-return-table table {
+    min-width: 860px;
   }
 }
 
@@ -1112,6 +1152,20 @@ button:disabled {
 }
 
 @media (max-width: 720px) {
+  :host {
+    background: #f8fafc;
+  }
+
+  .master-page,
+  .admin-page {
+    padding: 0;
+  }
+
+  .list-container,
+  .dashboard-grid {
+    gap: .75rem;
+  }
+
   .list-header .title-area,
   .form-actions,
   .master-modal-footer {
@@ -1119,8 +1173,74 @@ button:disabled {
     align-items: stretch;
   }
 
+  .list-header .title-area {
+    h1 {
+      font-size: 1.15rem;
+      line-height: 1.22;
+    }
+  }
+
+  .title-meta {
+    font-size: .78rem;
+  }
+
+  .card,
   .form-card {
-    padding: 1.25rem;
+    padding: .9rem;
+  }
+
+  .dashboard-card header,
+  .section-title {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-card header h2,
+  .projection-summary-card h2,
+  .card h2 {
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+
+  .metric-card,
+  .yield-row div,
+  .projection-summary-grid div,
+  .return-summary div {
+    padding: .85rem;
+  }
+
+  .metric-grid strong,
+  .yield-row strong,
+  .gap-card strong,
+  .yearly-return-card strong,
+  .projection-summary-card strong {
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+  }
+
+  .premium-bars {
+    min-height: auto;
+    gap: .9rem;
+  }
+
+  .premium-bar-head {
+    display: grid;
+    gap: .25rem;
+
+    strong {
+      font-size: .98rem;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .premium-bar-track {
+    height: 34px;
+
+    i {
+      min-width: 48px;
+      padding-right: .5rem;
+      font-size: .7rem;
+    }
   }
 
   .form-grid {
@@ -1132,7 +1252,114 @@ button:disabled {
   }
 
   .master-modal-card,
-  .user-modal-card {
+  .user-modal-card,
+  .investment-modal-card {
     width: 100%;
+  }
+
+  .master-modal-overlay {
+    align-items: flex-end;
+    padding: .6rem;
+  }
+
+  .master-modal-card {
+    max-height: calc(100dvh - 1.2rem);
+    border-radius: 14px 14px 10px 10px;
+  }
+
+  .master-modal-header,
+  .master-modal-footer {
+    padding: .85rem;
+  }
+
+  .master-modal-header h2 {
+    font-size: 1.05rem;
+  }
+
+  .master-modal-body {
+    padding: .9rem;
+  }
+
+  .btn-secondary,
+  .btn-new {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .btn-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .modern-select,
+  input,
+  select {
+    min-height: 42px;
+    padding: .68rem .75rem;
+    font-size: .9rem;
+  }
+
+  .table-card {
+    border-radius: 8px;
+    box-shadow: none;
+  }
+
+  .modern-table {
+    min-width: 620px;
+
+    th,
+    td {
+      padding: .62rem .7rem;
+      font-size: .82rem;
+    }
+
+    td.empty {
+      padding: 1.25rem;
+      white-space: normal;
+    }
+  }
+
+  .chart-empty {
+    min-height: 220px;
+
+    &.compact {
+      min-height: 180px;
+    }
+  }
+}
+
+@media (max-width: 430px) {
+  .card,
+  .form-card,
+  .filters-bar {
+    padding: .75rem;
+  }
+
+  .btn-compact {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .status-badge {
+    min-width: 56px;
+    padding-inline: .5rem;
+    font-size: .64rem;
+  }
+
+  .return-summary,
+  .projection-summary-grid {
+    gap: .65rem;
+  }
+
+  .yearly-return-table {
+    margin-inline: -.15rem;
+  }
+
+  .modern-table {
+    min-width: 560px;
+  }
+
+  .master-modal-overlay {
+    padding: .35rem;
   }
 }

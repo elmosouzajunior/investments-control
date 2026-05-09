@@ -30,4 +30,24 @@ export class AppShellComponent {
   @Output() cadastrosToggle = new EventEmitter<void>();
   @Output() lancamentosToggle = new EventEmitter<void>();
   @Output() logout = new EventEmitter<void>();
+
+  mobileMenuOpen = false;
+
+  toggleMobileMenu() {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+  }
+
+  closeMobileMenu() {
+    this.mobileMenuOpen = false;
+  }
+
+  selectPage(page: PageKey) {
+    this.pageChange.emit(page);
+    this.closeMobileMenu();
+  }
+
+  requestLogout() {
+    this.closeMobileMenu();
+    this.logout.emit();
+  }
 }

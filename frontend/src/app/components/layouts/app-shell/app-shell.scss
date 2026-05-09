@@ -2,6 +2,16 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: 280px 1fr;
+  overflow-x: hidden;
+}
+
+.sidebar-panel {
+  min-width: 0;
+}
+
+.mobile-menu-backdrop,
+.mobile-menu-button {
+  display: none;
 }
 
 .content {
@@ -9,6 +19,7 @@
   display: grid;
   align-content: start;
   gap: .85rem;
+  min-width: 0;
 }
 
 .topbar {
@@ -41,8 +52,117 @@
     grid-template-columns: 1fr;
   }
 
+  .sidebar-panel {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1001;
+    width: min(82vw, 320px);
+    transform: translateX(-100%);
+    transition: transform .22s ease;
+    will-change: transform;
+
+    &.open {
+      transform: translateX(0);
+    }
+  }
+
+  .mobile-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: block;
+    pointer-events: none;
+    background: rgba(15, 23, 42, .48);
+    opacity: 0;
+    transition: opacity .22s ease;
+
+    &.open {
+      pointer-events: auto;
+      opacity: 1;
+    }
+  }
+
+  .mobile-menu-button {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border: 1px solid #dbe4ef;
+    border-radius: 8px;
+    color: #1e293b;
+    background: #f8fafc;
+
+    i {
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    &.open {
+      color: #ffffff;
+      border-color: #2563eb;
+      background: #2563eb;
+    }
+  }
+
+  .content {
+    padding: .9rem;
+  }
+
   .topbar {
-    grid-template-columns: 1fr;
-    align-items: stretch;
+    min-height: auto;
+    justify-content: flex-start;
+    align-items: center;
+    padding: .85rem;
+
+    > div {
+      min-width: 0;
+      flex: 1;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    strong {
+      max-width: 34%;
+      overflow: hidden;
+      color: #475569;
+      font-size: .88rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+@media (max-width: 430px) {
+  .content {
+    padding: .7rem;
+    gap: .7rem;
+  }
+
+  .topbar {
+    border-radius: 6px;
+
+    span {
+      font-size: .72rem;
+    }
+
+    strong {
+      display: none;
+    }
+  }
+
+  .sidebar-panel {
+    width: min(86vw, 300px);
+  }
+
+  .mobile-menu-button {
+    width: 40px;
+    height: 40px;
   }
 }

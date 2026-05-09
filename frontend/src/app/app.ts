@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { CurrencyPipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { ChangeDetectorRef, Component, computed, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -190,7 +190,7 @@ interface MonthlyChartRow {
 
 @Component({
   selector: 'app-root',
-  imports: [AppShellComponent, CurrencyPipe, DatePipe, DecimalPipe, LoginPageComponent, NgApexchartsModule, NgTemplateOutlet, ReactiveFormsModule],
+  imports: [AppShellComponent, CurrencyPipe, DecimalPipe, LoginPageComponent, NgApexchartsModule, NgTemplateOutlet, ReactiveFormsModule],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -218,7 +218,7 @@ export class App {
   dashboardPlans: DashboardPlan[] = [];
   selectedDashboardPlanId = '';
   dashboardProjectionYears = 30;
-  dashboardReferenceDate = new Date().toISOString().slice(0, 10);
+  dashboardReferenceDate = this.todayIsoDate();
   chartRows: MonthlyChartRow[] = [];
   chartMonthlyReturnRows: DashboardAnnualReturnRow[] = [];
   chartBestMonthReturn: DashboardMonthReturn | null = null;
@@ -310,38 +310,38 @@ export class App {
     name: ['', Validators.required],
     ticker: [''],
     initialAmount: [0, Validators.min(0)],
-    startDate: [new Date().toISOString().slice(0, 10), Validators.required],
+    startDate: [this.todayIsoDate(), Validators.required],
     notes: [''],
     isActive: [true]
   });
 
   operationForm = this.fb.nonNullable.group({
     type: ['Contribution', Validators.required],
-    operationDate: [new Date().toISOString().slice(0, 10), Validators.required],
+    operationDate: [this.todayIsoDate(), Validators.required],
     amount: [0, Validators.min(0.01)],
     description: ['']
   });
 
   contributionForm = this.fb.nonNullable.group({
     investmentId: ['', Validators.required],
-    operationDate: [new Date().toISOString().slice(0, 10), Validators.required],
+    operationDate: [this.todayIsoDate(), Validators.required],
     amount: [0, Validators.min(0.01)]
   });
 
   withdrawalForm = this.fb.nonNullable.group({
     investmentId: ['', Validators.required],
-    operationDate: [new Date().toISOString().slice(0, 10), Validators.required],
+    operationDate: [this.todayIsoDate(), Validators.required],
     amount: [0, Validators.min(0.01)]
   });
 
   incomeForm = this.fb.nonNullable.group({
     investmentId: ['', Validators.required],
-    month: [new Date().toISOString().slice(0, 10), Validators.required],
+    month: [this.todayIsoDate(), Validators.required],
     marketValue: [0, Validators.min(0)]
   });
 
   measurementForm = this.fb.nonNullable.group({
-    month: [new Date().toISOString().slice(0, 10), Validators.required],
+    month: [this.todayIsoDate(), Validators.required],
     marketValue: [0, Validators.min(0)],
     incomeAmount: [0],
     notes: ['']
@@ -859,7 +859,7 @@ export class App {
 
   async loadDashboard() {
     await this.loadInvestments();
-    const referenceDate = this.dashboardReferenceDate ? new Date(this.dashboardReferenceDate) : new Date();
+    const referenceDate = this.dashboardReferenceDate ? this.parseBusinessDate(this.dashboardReferenceDate) : this.todayBusinessDate();
     const projectionYears = this.normalizedDashboardProjectionYears();
     const rows: DashboardPlan[] = [];
 
@@ -881,9 +881,9 @@ export class App {
         ]);
         projectionStartDate = this.earliestDate([
           projectionStartDate,
-          new Date(investment.startDate),
-          ...operations.map((operation) => new Date(operation.operationDate)),
-          ...measurements.map((measurement) => new Date(measurement.month))
+          this.parseBusinessDate(investment.startDate),
+          ...operations.map((operation) => this.parseBusinessDate(operation.operationDate)),
+          ...measurements.map((measurement) => this.parseBusinessDate(measurement.month))
         ]);
         const latestMeasurement = this.latestMeasurementUntil(measurements, referenceDate);
         const netInvested = this.netInvestedAmountUntil(investment, operations, referenceDate);
@@ -919,8 +919,8 @@ export class App {
         expectedProjectedBalance: expectedProjectionBalance,
         realProjectionBalance,
         expectedProjectionBalance,
-        projectionStartDate: projectionBaseDate.toISOString().slice(0, 10),
-        projectionEndDate: projectionEndDate.toISOString().slice(0, 10),
+        projectionStartDate: this.toBusinessDateKey(projectionBaseDate),
+        projectionEndDate: this.toBusinessDateKey(projectionEndDate),
         realYieldPercent: investedBase > 0 ? ((currentRealBalance / investedBase) - 1) * 100 : 0,
         expectedYieldPercent: investedBase > 0 ? ((currentExpectedBalance / investedBase) - 1) * 100 : 0,
         categoryComposition: [...categoryComposition.entries()]
@@ -945,7 +945,7 @@ export class App {
   }
 
   async setDashboardReferenceDate(value: string) {
-    this.dashboardReferenceDate = value || new Date().toISOString().slice(0, 10);
+    this.dashboardReferenceDate = value || this.todayIsoDate();
     await this.loadDashboard();
     this.cdr.detectChanges();
   }
@@ -1195,7 +1195,7 @@ export class App {
       name: '',
       ticker: '',
       initialAmount: 0,
-      startDate: new Date().toISOString().slice(0, 10),
+      startDate: this.todayIsoDate(),
       notes: '',
       isActive: true
     });
@@ -1251,7 +1251,7 @@ export class App {
     this.contributionAmountDisplay = this.formatCurrency(amount);
     this.contributionForm.reset({
       investmentId,
-      operationDate: operation?.operationDate ?? new Date().toISOString().slice(0, 10),
+      operationDate: operation?.operationDate ?? this.todayIsoDate(),
       amount
     });
     this.contributionModalOpen = true;
@@ -1329,7 +1329,7 @@ export class App {
     this.withdrawalAmountDisplay = this.formatCurrency(amount);
     this.withdrawalForm.reset({
       investmentId,
-      operationDate: operation?.operationDate ?? new Date().toISOString().slice(0, 10),
+      operationDate: operation?.operationDate ?? this.todayIsoDate(),
       amount
     });
     this.withdrawalModalOpen = true;
@@ -1407,7 +1407,7 @@ export class App {
     this.incomeAmountDisplay = this.formatCurrency(amount);
     this.incomeForm.reset({
       investmentId,
-      month: measurement?.month ?? new Date().toISOString().slice(0, 10),
+      month: measurement?.month ?? this.todayIsoDate(),
       marketValue: amount
     });
     this.incomeModalOpen = true;
@@ -1621,14 +1621,14 @@ export class App {
   }
 
   private latestMeasurementUntil(measurements: Measurement[], targetDate: Date) {
-    const targetKey = targetDate.toISOString().slice(0, 10);
+    const targetKey = this.toBusinessDateKey(targetDate);
     return [...measurements]
       .filter((measurement) => measurement.month <= targetKey)
       .sort((a, b) => this.compareIsoDateDesc(a.month, b.month))[0];
   }
 
   private netInvestedAmountUntil(investment: Investment, operations: Operation[], targetDate: Date) {
-    const targetKey = targetDate.toISOString().slice(0, 10);
+    const targetKey = this.toBusinessDateKey(targetDate);
     const initialAmount = investment.startDate <= targetKey ? investment.initialAmount : 0;
 
     return operations
@@ -1642,7 +1642,7 @@ export class App {
 
   private endOfMonth(month: string) {
     const [year, monthNumber] = month.split('-').map(Number);
-    return new Date(year, monthNumber, 0);
+    return this.businessDateFromParts(year, monthNumber + 1, 0);
   }
 
   private formatMonthLabel(month: string) {
@@ -1819,6 +1819,34 @@ export class App {
     }).format(value);
   }
 
+  private todayIsoDate() {
+    return this.toBusinessDateKey(new Date());
+  }
+
+  private todayBusinessDate() {
+    return this.parseBusinessDate(this.todayIsoDate());
+  }
+
+  private parseBusinessDate(value: string) {
+    const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+    return this.businessDateFromParts(year, month, day);
+  }
+
+  private businessDateFromParts(year: number, month: number, day: number) {
+    return new Date(Date.UTC(year, month - 1, day, 15, 0, 0));
+  }
+
+  private toBusinessDateKey(date: Date) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(date);
+    const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
+    return `${value('year')}-${value('month')}-${value('day')}`;
+  }
+
   private netInvestedAmount(investment: Investment, operations: Operation[]) {
     return operations.reduce((total, operation) => {
       if (operation.type === 'Contribution') return total + operation.amount;
@@ -1829,19 +1857,19 @@ export class App {
 
   private projectCashflows(investment: Investment, operations: Operation[], annualPercent: number, targetDate: Date) {
     const annualRate = annualPercent / 100;
-    const targetKey = targetDate.toISOString().slice(0, 10);
+    const targetKey = this.toBusinessDateKey(targetDate);
     const cashflows = [
-      { date: new Date(investment.startDate), amount: investment.initialAmount },
+      { date: this.parseBusinessDate(investment.startDate), amount: investment.initialAmount },
       ...operations
         .filter((operation) => operation.type === 'Contribution' || operation.type === 'Withdrawal')
         .map((operation) => ({
-          date: new Date(operation.operationDate),
+          date: this.parseBusinessDate(operation.operationDate),
           amount: operation.type === 'Contribution' ? operation.amount : -operation.amount
         }))
     ];
 
     return cashflows
-      .filter((cashflow) => cashflow.date.toISOString().slice(0, 10) <= targetKey)
+      .filter((cashflow) => this.toBusinessDateKey(cashflow.date) <= targetKey)
       .reduce((total, cashflow) => {
       const years = Math.max(this.yearsBetween(cashflow.date, targetDate), 0);
       return total + cashflow.amount * Math.pow(1 + annualRate, years);
@@ -1854,7 +1882,7 @@ export class App {
 
   private addYears(date: Date, years: number) {
     const result = new Date(date);
-    result.setDate(result.getDate() + Math.round(years * 365.25));
+    result.setUTCDate(result.getUTCDate() + Math.round(years * 365.25));
     return result;
   }
 
@@ -1865,12 +1893,13 @@ export class App {
   }
 
   private addMonths(date: Date, months: number) {
-    return new Date(date.getFullYear(), date.getMonth() + months + 1, 0);
+    const [year, monthNumber] = this.toBusinessDateKey(date).split('-').map(Number);
+    return this.businessDateFromParts(year, monthNumber + months + 1, 0);
   }
 
   private planNetMovementBetween(snapshots: Array<{ investment: Investment; operations: Operation[] }>, startDate: Date, endDate: Date) {
-    const startKey = startDate.toISOString().slice(0, 10);
-    const endKey = endDate.toISOString().slice(0, 10);
+    const startKey = this.toBusinessDateKey(startDate);
+    const endKey = this.toBusinessDateKey(endDate);
 
     return snapshots.reduce((total, snapshot) => {
       const initialAmount = snapshot.investment.startDate > startKey && snapshot.investment.startDate <= endKey

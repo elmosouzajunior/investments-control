@@ -1,23 +1,37 @@
 <div class="shell">
-  <app-sidebar
-    [session]="session"
-    [activePage]="activePage"
-    [masterMenu]="masterMenu"
-    [dashboardMenu]="dashboardMenu"
-    [cadastroMenu]="cadastroMenu"
-    [lancamentoMenu]="lancamentoMenu"
-    [dashboardOpen]="dashboardOpen"
-    [cadastrosOpen]="cadastrosOpen"
-    [lancamentosOpen]="lancamentosOpen"
-    (pageChange)="pageChange.emit($event)"
-    (dashboardToggle)="dashboardToggle.emit()"
-    (cadastrosToggle)="cadastrosToggle.emit()"
-    (lancamentosToggle)="lancamentosToggle.emit()"
-    (logout)="logout.emit()"
-  />
+  <div class="mobile-menu-backdrop" [class.open]="mobileMenuOpen" (click)="closeMobileMenu()"></div>
+
+  <div class="sidebar-panel" [class.open]="mobileMenuOpen">
+    <app-sidebar
+      [session]="session"
+      [activePage]="activePage"
+      [masterMenu]="masterMenu"
+      [dashboardMenu]="dashboardMenu"
+      [cadastroMenu]="cadastroMenu"
+      [lancamentoMenu]="lancamentoMenu"
+      [dashboardOpen]="dashboardOpen"
+      [cadastrosOpen]="cadastrosOpen"
+      [lancamentosOpen]="lancamentosOpen"
+      (pageChange)="selectPage($event)"
+      (dashboardToggle)="dashboardToggle.emit()"
+      (cadastrosToggle)="cadastrosToggle.emit()"
+      (lancamentosToggle)="lancamentosToggle.emit()"
+      (logout)="requestLogout()"
+    />
+  </div>
 
   <main class="content">
     <header class="topbar">
+      <button
+        type="button"
+        class="mobile-menu-button"
+        [class.open]="mobileMenuOpen"
+        (click)="toggleMobileMenu()"
+        aria-label="Abrir menu"
+        [attr.aria-expanded]="mobileMenuOpen"
+      >
+        <i class="bi" [class.bi-list]="!mobileMenuOpen" [class.bi-x-lg]="mobileMenuOpen"></i>
+      </button>
       <div>
         <span>{{ session.role === 'Master' ? 'Área Master' : 'Área da Empresa' }}</span>
         <h1>{{ pageTitle }}</h1>
