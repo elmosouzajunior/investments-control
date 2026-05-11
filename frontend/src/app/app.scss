@@ -890,6 +890,13 @@ button:disabled {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, .12), 0 12px 48px rgba(15, 23, 42, .28);
 }
 
+.master-modal-card form {
+  min-height: 0;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
 .user-modal-card {
   width: min(92vw, 860px);
 }
@@ -918,7 +925,10 @@ button:disabled {
 }
 
 .master-modal-body {
+  min-height: 0;
+  flex: 1 1 auto;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 1.25rem;
 
   .form-section h3 {
