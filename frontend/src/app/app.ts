@@ -249,6 +249,7 @@ export class App {
   incomeModalOpen = false;
   editingIncomeId: string | null = null;
   editingIncomeInvestmentId: string | null = null;
+  incomeDateDisplay = this.formatDisplayDate(this.todayIsoDate());
   incomeAmountDisplay = this.formatCurrency(0);
 
   editingCompanyId: string | null = null;
@@ -1403,11 +1404,13 @@ export class App {
     this.editingIncomeId = measurement?.id ?? null;
     this.editingIncomeInvestmentId = measurement?.investmentId ?? null;
     const investmentId = measurement?.investmentId ?? this.investmentsForIncomePlan[0]?.id ?? '';
+    const month = measurement?.month ?? this.todayIsoDate();
     const amount = measurement?.marketValue ?? 0;
+    this.incomeDateDisplay = this.formatDisplayDate(month);
     this.incomeAmountDisplay = this.formatCurrency(amount);
     this.incomeForm.reset({
       investmentId,
-      month: measurement?.month ?? this.todayIsoDate(),
+      month,
       marketValue: amount
     });
     this.incomeModalOpen = true;
@@ -1417,7 +1420,20 @@ export class App {
     this.incomeModalOpen = false;
     this.editingIncomeId = null;
     this.editingIncomeInvestmentId = null;
+    this.incomeDateDisplay = this.formatDisplayDate(this.todayIsoDate());
     this.incomeAmountDisplay = this.formatCurrency(0);
+  }
+
+  updateIncomeDate(value: string) {
+    const formatted = this.formatPartialDisplayDate(value);
+    this.incomeDateDisplay = formatted;
+    this.incomeForm.patchValue({ month: this.parseDisplayDate(formatted) });
+  }
+
+  formatIncomeDate() {
+    const month = this.parseDisplayDate(this.incomeDateDisplay);
+    this.incomeForm.patchValue({ month });
+    this.incomeDateDisplay = month ? this.formatDisplayDate(month) : '';
   }
 
   updateIncomeAmount(value: string) {
@@ -1817,6 +1833,33 @@ export class App {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  }
+
+  private formatPartialDisplayDate(value: string) {
+    if (value.includes('/')) {
+      return value.replace(/[^\d/]/g, '').slice(0, 10);
+    }
+
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
+    return parts.join('/');
+  }
+
+  private parseDisplayDate(value: string) {
+    const normalized = value.includes('/') ? value : this.formatPartialDisplayDate(value);
+    const [dayText, monthText, yearText] = normalized.split('/');
+    if (!dayText || !monthText || yearText?.length !== 4) return '';
+
+    const day = Number(dayText);
+    const month = Number(monthText);
+    const year = Number(yearText);
+    if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year)) return '';
+
+    const date = this.businessDateFromParts(year, month, day);
+    const isoDate = this.toBusinessDateKey(date);
+    const displayDate = `${dayText.padStart(2, '0')}/${monthText.padStart(2, '0')}/${yearText}`;
+
+    return this.formatDisplayDate(isoDate) === displayDate ? isoDate : '';
   }
 
   private todayIsoDate() {

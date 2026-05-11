@@ -794,7 +794,7 @@
                   </div>
                   <div class="form-group">
                     <label>Data do saldo</label>
-                    <input class="modern-select" formControlName="month" type="date" />
+                    <input class="modern-select" [value]="incomeDateDisplay" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" (input)="updateIncomeDate($any($event.target).value)" (blur)="formatIncomeDate()" />
                   </div>
                   <div class="form-group">
                     <label>Valor total disponível</label>
