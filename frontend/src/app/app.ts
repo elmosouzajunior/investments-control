@@ -506,10 +506,8 @@ export class App {
 
     return {
       series: [
-        { name: 'Saldo Real', type: 'line', data: rows.map((row) => Number(row.actualValue.toFixed(2))) },
-        { name: 'Saldo Previsto', type: 'line', data: rows.map((row) => Number(row.expectedValue.toFixed(2))) },
-        { name: 'Aportes', type: 'column', data: rows.map((row) => Number(row.contributionAmount.toFixed(2))) },
-        { name: 'Retiradas', type: 'column', data: rows.map((row) => Number((-row.withdrawalAmount).toFixed(2))) }
+        { name: 'Saldo Real', data: rows.map((row) => Number(row.actualValue.toFixed(2))) },
+        { name: 'Saldo Previsto', data: rows.map((row) => Number(row.expectedValue.toFixed(2))) }
       ],
       chart: {
         type: 'line',
@@ -518,27 +516,20 @@ export class App {
         animations: { enabled: true, speed: 650 },
         fontFamily: 'Inter, Segoe UI, sans-serif'
       },
-      colors: ['#16a34a', '#64748b', '#2563eb', '#ef4444'],
+      colors: ['#16a34a', '#64748b'],
       stroke: {
-        width: [3, 3, 0, 0],
+        width: [3, 3],
         curve: 'smooth',
-        dashArray: [0, 5, 0, 0]
+        dashArray: [0, 5]
       },
       markers: {
-        size: [4, 3, 0, 0],
+        size: [4, 3],
         strokeWidth: 2,
         hover: { sizeOffset: 2 }
       },
-      plotOptions: {
-        bar: {
-          columnWidth: '42%',
-          borderRadius: 3
-        }
-      },
+      plotOptions: {},
       dataLabels: { enabled: false },
-      fill: {
-        opacity: [1, 1, .45, .45]
-      },
+      fill: { opacity: 1 },
       grid: {
         borderColor: '#e2e8f0',
         strokeDashArray: 4
@@ -557,34 +548,18 @@ export class App {
           style: { colors: '#64748b', fontSize: '11px' }
         }
       },
-      yaxis: [
-        {
-          seriesName: 'Saldo Real',
-          title: { text: 'Saldo', style: { color: '#64748b', fontSize: '11px', fontWeight: 700 } },
-          labels: {
-            formatter: (value: number) => this.formatCurrency(Number(value)),
-            style: { colors: '#64748b', fontSize: '11px' }
-          }
-        },
-        {
-          seriesName: 'Aportes',
-          opposite: true,
-          title: { text: 'Movimentos', style: { color: '#64748b', fontSize: '11px', fontWeight: 700 } },
-          labels: {
-            formatter: (value: number) => this.formatCurrency(Math.abs(Number(value))),
-            style: { colors: '#64748b', fontSize: '11px' }
-          }
+      yaxis: {
+        title: { text: 'Saldo', style: { color: '#64748b', fontSize: '11px', fontWeight: 700 } },
+        labels: {
+          formatter: (value: number) => this.formatCurrency(Number(value)),
+          style: { colors: '#64748b', fontSize: '11px' }
         }
-      ],
+      },
       tooltip: {
         theme: 'light',
         shared: true,
         y: {
-          formatter: (value: number, context?: { seriesIndex: number; dataPointIndex: number }) => {
-            const row = rows[context?.dataPointIndex ?? 0];
-            if (context?.seriesIndex === 3) return this.formatCurrency(row?.withdrawalAmount ?? Math.abs(Number(value)));
-            return this.formatCurrency(Math.abs(Number(value)));
-          }
+          formatter: (value: number) => this.formatCurrency(Number(value))
         }
       }
     };
