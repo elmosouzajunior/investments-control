@@ -283,8 +283,8 @@ export class App {
   investmentModalOpen = false;
 
   loginForm = this.fb.nonNullable.group({
-    email: ['master@omegainvest.com', [Validators.required, Validators.email]],
-    password: ['Master@123', Validators.required]
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required]
   });
 
   companyForm = this.fb.nonNullable.group({
