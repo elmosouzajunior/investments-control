@@ -173,6 +173,8 @@ interface DashboardEvolutionRow {
   label: string;
   actualValue: number;
   expectedValue: number;
+  expectedValue20: number;
+  expectedValue30: number;
   contributionAmount: number;
   withdrawalAmount: number;
   gapValue: number;
@@ -507,7 +509,9 @@ export class App {
     return {
       series: [
         { name: 'Saldo Real', data: rows.map((row) => Number(row.actualValue.toFixed(2))) },
-        { name: 'Saldo Previsto', data: rows.map((row) => Number(row.expectedValue.toFixed(2))) }
+        { name: 'Previsto 10% a.a.', data: rows.map((row) => Number(row.expectedValue.toFixed(2))) },
+        { name: 'Previsto 20% a.a.', data: rows.map((row) => Number(row.expectedValue20.toFixed(2))) },
+        { name: 'Previsto 30% a.a.', data: rows.map((row) => Number(row.expectedValue30.toFixed(2))) }
       ],
       chart: {
         type: 'line',
@@ -516,14 +520,14 @@ export class App {
         animations: { enabled: true, speed: 650 },
         fontFamily: 'Inter, Segoe UI, sans-serif'
       },
-      colors: ['#16a34a', '#64748b'],
+      colors: ['#16a34a', '#64748b', '#2563eb', '#f59e0b'],
       stroke: {
-        width: [3, 3],
+        width: [3, 3, 3, 3],
         curve: 'smooth',
-        dashArray: [0, 5]
+        dashArray: [0, 5, 5, 5]
       },
       markers: {
-        size: [4, 3],
+        size: [4, 3, 3, 3],
         strokeWidth: 2,
         hover: { sizeOffset: 2 }
       },
@@ -1775,12 +1779,16 @@ export class App {
       const monthStart = this.startOfMonth(month);
       let actualValue = 0;
       let expectedValue = 0;
+      let expectedValue20 = 0;
+      let expectedValue30 = 0;
       let contributionAmount = 0;
       let withdrawalAmount = 0;
 
       for (const snapshot of snapshots) {
         actualValue += this.realBalanceUntil(snapshot.investment, snapshot.operations, snapshot.measurements, monthEnd);
         expectedValue += this.projectCashflows(snapshot.investment, snapshot.operations, annualPercent, monthEnd);
+        expectedValue20 += this.projectCashflows(snapshot.investment, snapshot.operations, 20, monthEnd);
+        expectedValue30 += this.projectCashflows(snapshot.investment, snapshot.operations, 30, monthEnd);
 
         const startKey = this.toBusinessDateKey(monthStart);
         const endKey = this.toBusinessDateKey(monthEnd);
@@ -1795,6 +1803,8 @@ export class App {
         label: this.formatMonthLabel(month),
         actualValue,
         expectedValue,
+        expectedValue20,
+        expectedValue30,
         contributionAmount,
         withdrawalAmount,
         gapValue: actualValue - expectedValue
