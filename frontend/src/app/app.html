@@ -319,37 +319,31 @@
         <article class="card dashboard-card">
           <header>
             <div>
-              <span>Real x Previsto</span>
-              <h2>Saldo Atual</h2>
+              <span>Evolução</span>
+              <h2>Real x Previsto</h2>
             </div>
           </header>
-          <div class="premium-bars">
-            <div class="premium-bar-row real">
-              <div class="premium-bar-head">
-                <span>Real</span>
-                <strong [class.value-positive]="plan.currentRealBalance >= plan.currentExpectedBalance" [class.value-negative]="plan.currentRealBalance < plan.currentExpectedBalance">
-                  {{ plan.currentRealBalance | currency:'BRL' }}
-                </strong>
-              </div>
-              <div class="premium-bar-track">
-                <i [style.width.%]="dashboardPremiumBarWidth(plan.currentRealBalance, plan)">
-                  <span>{{ dashboardRealVsExpectedPercent(plan) | number:'1.0-0' }}%</span>
-                </i>
-              </div>
+          @if (plan.evolutionRows.length > 0) {
+            <apx-chart
+              [series]="dashboardEvolutionChartOptions.series!"
+              [chart]="dashboardEvolutionChartOptions.chart!"
+              [xaxis]="dashboardEvolutionChartOptions.xaxis!"
+              [yaxis]="dashboardEvolutionChartOptions.yaxis!"
+              [dataLabels]="dashboardEvolutionChartOptions.dataLabels!"
+              [plotOptions]="dashboardEvolutionChartOptions.plotOptions!"
+              [grid]="dashboardEvolutionChartOptions.grid!"
+              [tooltip]="dashboardEvolutionChartOptions.tooltip!"
+              [legend]="dashboardEvolutionChartOptions.legend!"
+              [fill]="dashboardEvolutionChartOptions.fill!"
+              [stroke]="dashboardEvolutionChartOptions.stroke!"
+              [markers]="dashboardEvolutionChartOptions.markers!"
+              [colors]="dashboardEvolutionChartOptions.colors!">
+            </apx-chart>
+          } @else {
+            <div class="chart-empty compact">
+              <p class="empty">Nenhum histórico encontrado para montar a evolução deste plano.</p>
             </div>
-
-            <div class="premium-bar-row expected">
-              <div class="premium-bar-head">
-                <span>Previsto</span>
-                <strong>{{ plan.currentExpectedBalance | currency:'BRL' }}</strong>
-              </div>
-              <div class="premium-bar-track">
-                <i style="width: 100%">
-                  <span>100%</span>
-                </i>
-              </div>
-            </div>
-          </div>
+          }
         </article>
 
         <article class="card dashboard-card category-composition-card">

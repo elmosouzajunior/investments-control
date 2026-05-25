@@ -9,8 +9,10 @@ import {
   ApexFill,
   ApexGrid,
   ApexLegend,
+  ApexMarkers,
   ApexNonAxisChartSeries,
   ApexPlotOptions,
+  ApexStroke,
   ApexTooltip,
   ApexXAxis,
   ApexYAxis,
@@ -29,13 +31,15 @@ type MonthlyApexChartOptions = {
   series: ApexAxisChartSeries;
   chart: ApexChart;
   xaxis: ApexXAxis;
-  yaxis: ApexYAxis;
+  yaxis: ApexYAxis | ApexYAxis[];
   dataLabels: ApexDataLabels;
   plotOptions: ApexPlotOptions;
   grid: ApexGrid;
   tooltip: ApexTooltip;
   legend: ApexLegend;
   fill: ApexFill;
+  stroke?: ApexStroke;
+  markers?: ApexMarkers;
   colors: string[];
 };
 
@@ -156,11 +160,22 @@ interface DashboardPlan {
   realYieldPercent: number;
   expectedYieldPercent: number;
   categoryComposition: DashboardCategoryComposition[];
+  evolutionRows: DashboardEvolutionRow[];
 }
 
 interface DashboardCategoryComposition {
   category: string;
   value: number;
+}
+
+interface DashboardEvolutionRow {
+  month: string;
+  label: string;
+  actualValue: number;
+  expectedValue: number;
+  contributionAmount: number;
+  withdrawalAmount: number;
+  gapValue: number;
 }
 
 interface DashboardMonthReturn {
@@ -484,6 +499,95 @@ export class App {
       ],
       (value) => `${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
     );
+  }
+
+  get dashboardEvolutionChartOptions(): Partial<MonthlyApexChartOptions> {
+    const rows = this.selectedDashboardPlan?.evolutionRows ?? [];
+
+    return {
+      series: [
+        { name: 'Saldo Real', type: 'line', data: rows.map((row) => Number(row.actualValue.toFixed(2))) },
+        { name: 'Saldo Previsto', type: 'line', data: rows.map((row) => Number(row.expectedValue.toFixed(2))) },
+        { name: 'Aportes', type: 'column', data: rows.map((row) => Number(row.contributionAmount.toFixed(2))) },
+        { name: 'Retiradas', type: 'column', data: rows.map((row) => Number((-row.withdrawalAmount).toFixed(2))) }
+      ],
+      chart: {
+        type: 'line',
+        height: 310,
+        toolbar: { show: false },
+        animations: { enabled: true, speed: 650 },
+        fontFamily: 'Inter, Segoe UI, sans-serif'
+      },
+      colors: ['#16a34a', '#64748b', '#2563eb', '#ef4444'],
+      stroke: {
+        width: [3, 3, 0, 0],
+        curve: 'smooth',
+        dashArray: [0, 5, 0, 0]
+      },
+      markers: {
+        size: [4, 3, 0, 0],
+        strokeWidth: 2,
+        hover: { sizeOffset: 2 }
+      },
+      plotOptions: {
+        bar: {
+          columnWidth: '42%',
+          borderRadius: 3
+        }
+      },
+      dataLabels: { enabled: false },
+      fill: {
+        opacity: [1, 1, .45, .45]
+      },
+      grid: {
+        borderColor: '#e2e8f0',
+        strokeDashArray: 4
+      },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'right',
+        fontSize: '12px',
+        labels: { colors: '#475569' },
+        markers: { shape: 'circle' }
+      },
+      xaxis: {
+        categories: rows.map((row) => row.label),
+        labels: {
+          rotate: -35,
+          style: { colors: '#64748b', fontSize: '11px' }
+        }
+      },
+      yaxis: [
+        {
+          seriesName: 'Saldo Real',
+          title: { text: 'Saldo', style: { color: '#64748b', fontSize: '11px', fontWeight: 700 } },
+          labels: {
+            formatter: (value: number) => this.formatCurrency(Number(value)),
+            style: { colors: '#64748b', fontSize: '11px' }
+          }
+        },
+        {
+          seriesName: 'Aportes',
+          opposite: true,
+          title: { text: 'Movimentos', style: { color: '#64748b', fontSize: '11px', fontWeight: 700 } },
+          labels: {
+            formatter: (value: number) => this.formatCurrency(Math.abs(Number(value))),
+            style: { colors: '#64748b', fontSize: '11px' }
+          }
+        }
+      ],
+      tooltip: {
+        theme: 'light',
+        shared: true,
+        y: {
+          formatter: (value: number, context?: { seriesIndex: number; dataPointIndex: number }) => {
+            const row = rows[context?.dataPointIndex ?? 0];
+            if (context?.seriesIndex === 3) return this.formatCurrency(row?.withdrawalAmount ?? Math.abs(Number(value)));
+            return this.formatCurrency(Math.abs(Number(value)));
+          }
+        }
+      }
+    };
   }
 
   get dashboardCategoryChartOptions(): Partial<DonutApexChartOptions> {
@@ -886,9 +990,8 @@ export class App {
           ...operations.map((operation) => this.parseBusinessDate(operation.operationDate)),
           ...measurements.map((measurement) => this.parseBusinessDate(measurement.month))
         ]);
-        const latestMeasurement = this.latestMeasurementUntil(measurements, referenceDate);
         const netInvested = this.netInvestedAmountUntil(investment, operations, referenceDate);
-        const realBalance = latestMeasurement?.marketValue ?? netInvested;
+        const realBalance = this.realBalanceUntil(investment, operations, measurements, referenceDate);
         const expectedBalance = this.projectCashflows(investment, operations, plan.targetAmount, referenceDate);
 
         investedBase += netInvested;
@@ -926,7 +1029,8 @@ export class App {
         expectedYieldPercent: investedBase > 0 ? ((currentExpectedBalance / investedBase) - 1) * 100 : 0,
         categoryComposition: [...categoryComposition.entries()]
           .map(([category, value]) => ({ category, value }))
-          .sort((a, b) => b.value - a.value)
+          .sort((a, b) => b.value - a.value),
+        evolutionRows: this.buildDashboardEvolutionRows(snapshots, plan.targetAmount, referenceDate)
       });
     }
 
@@ -1024,14 +1128,9 @@ export class App {
       let previousExpectedValue = 0;
 
       for (const snapshot of snapshots) {
-        const actualMeasurement = this.latestMeasurementUntil(snapshot.measurements, monthEnd);
-        const previousActualMeasurement = this.latestMeasurementUntil(snapshot.measurements, previousMonthEnd);
-        const netInvested = this.netInvestedAmountUntil(snapshot.investment, snapshot.operations, monthEnd);
-        const previousNetInvested = this.netInvestedAmountUntil(snapshot.investment, snapshot.operations, previousMonthEnd);
-
-        actualValue += actualMeasurement?.marketValue ?? netInvested;
+        actualValue += this.realBalanceUntil(snapshot.investment, snapshot.operations, snapshot.measurements, monthEnd);
         expectedValue += this.projectCashflows(snapshot.investment, snapshot.operations, plan.targetAmount, monthEnd);
-        previousActualValue += previousActualMeasurement?.marketValue ?? previousNetInvested;
+        previousActualValue += this.realBalanceUntil(snapshot.investment, snapshot.operations, snapshot.measurements, previousMonthEnd);
         previousExpectedValue += this.projectCashflows(snapshot.investment, snapshot.operations, plan.targetAmount, previousMonthEnd);
       }
 
@@ -1656,9 +1755,90 @@ export class App {
       }, initialAmount);
   }
 
+  private realBalanceUntil(investment: Investment, operations: Operation[], measurements: Measurement[], targetDate: Date) {
+    const latestMeasurement = this.latestMeasurementUntil(measurements, targetDate);
+    if (!latestMeasurement) {
+      return this.netInvestedAmountUntil(investment, operations, targetDate);
+    }
+
+    const targetKey = this.toBusinessDateKey(targetDate);
+    return operations
+      .filter((operation) => operation.operationDate > latestMeasurement.month && operation.operationDate <= targetKey)
+      .reduce((total, operation) => {
+        if (operation.type === 'Contribution') return total + operation.amount;
+        if (operation.type === 'Withdrawal') return total - operation.amount;
+        return total;
+      }, latestMeasurement.marketValue);
+  }
+
+  private buildDashboardEvolutionRows(
+    snapshots: Array<{ investment: Investment; operations: Operation[]; measurements: Measurement[] }>,
+    annualPercent: number,
+    referenceDate: Date
+  ): DashboardEvolutionRow[] {
+    const referenceKey = this.toBusinessDateKey(referenceDate);
+    const monthKeys = [
+      ...new Set([
+        referenceKey.slice(0, 7),
+        ...snapshots.flatMap((snapshot) => [
+          snapshot.investment.startDate.slice(0, 7),
+          ...snapshot.operations
+            .filter((operation) => operation.operationDate <= referenceKey)
+            .map((operation) => operation.operationDate.slice(0, 7)),
+          ...snapshot.measurements
+            .filter((measurement) => measurement.month <= referenceKey)
+            .map((measurement) => measurement.month.slice(0, 7))
+        ])
+      ])
+    ]
+      .filter((month) => month <= referenceKey.slice(0, 7))
+      .sort()
+      .slice(-12);
+
+    return monthKeys.map((month) => {
+      const monthEnd = this.minBusinessDate(this.endOfMonth(month), referenceDate);
+      const monthStart = this.startOfMonth(month);
+      let actualValue = 0;
+      let expectedValue = 0;
+      let contributionAmount = 0;
+      let withdrawalAmount = 0;
+
+      for (const snapshot of snapshots) {
+        actualValue += this.realBalanceUntil(snapshot.investment, snapshot.operations, snapshot.measurements, monthEnd);
+        expectedValue += this.projectCashflows(snapshot.investment, snapshot.operations, annualPercent, monthEnd);
+
+        const startKey = this.toBusinessDateKey(monthStart);
+        const endKey = this.toBusinessDateKey(monthEnd);
+        for (const operation of snapshot.operations.filter((item) => item.operationDate >= startKey && item.operationDate <= endKey)) {
+          if (operation.type === 'Contribution') contributionAmount += operation.amount;
+          if (operation.type === 'Withdrawal') withdrawalAmount += operation.amount;
+        }
+      }
+
+      return {
+        month,
+        label: this.formatMonthLabel(month),
+        actualValue,
+        expectedValue,
+        contributionAmount,
+        withdrawalAmount,
+        gapValue: actualValue - expectedValue
+      };
+    });
+  }
+
   private endOfMonth(month: string) {
     const [year, monthNumber] = month.split('-').map(Number);
     return this.businessDateFromParts(year, monthNumber + 1, 0);
+  }
+
+  private startOfMonth(month: string) {
+    const [year, monthNumber] = month.split('-').map(Number);
+    return this.businessDateFromParts(year, monthNumber, 1);
+  }
+
+  private minBusinessDate(first: Date, second: Date) {
+    return first.getTime() <= second.getTime() ? first : second;
   }
 
   private formatMonthLabel(month: string) {
@@ -1773,13 +1953,8 @@ export class App {
       let previousActualValue = 0;
 
       for (const snapshot of snapshots) {
-        const actualMeasurement = this.latestMeasurementUntil(snapshot.measurements, monthEnd);
-        const previousActualMeasurement = this.latestMeasurementUntil(snapshot.measurements, previousMonthEnd);
-        const netInvested = this.netInvestedAmountUntil(snapshot.investment, snapshot.operations, monthEnd);
-        const previousNetInvested = this.netInvestedAmountUntil(snapshot.investment, snapshot.operations, previousMonthEnd);
-
-        actualValue += actualMeasurement?.marketValue ?? netInvested;
-        previousActualValue += previousActualMeasurement?.marketValue ?? previousNetInvested;
+        actualValue += this.realBalanceUntil(snapshot.investment, snapshot.operations, snapshot.measurements, monthEnd);
+        previousActualValue += this.realBalanceUntil(snapshot.investment, snapshot.operations, snapshot.measurements, previousMonthEnd);
       }
 
       const monthlyNetMovement = this.planNetMovementBetween(snapshots, previousMonthEnd, monthEnd);
