@@ -385,6 +385,69 @@ button:disabled {
   }
 }
 
+.simulator-filters {
+  align-items: end;
+}
+
+.percent-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .45rem;
+
+  span {
+    color: #475569;
+    font-size: .92rem;
+    font-weight: 800;
+  }
+}
+
+.slider-group {
+  min-width: 260px;
+}
+
+.yield-slider {
+  width: 100%;
+  min-height: 44px;
+  accent-color: #2563eb;
+}
+
+.simulator-main {
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, .65fr);
+}
+
+.simulator-chart-card {
+  min-width: 0;
+}
+
+.simulator-summary-list {
+  display: grid;
+  gap: .85rem;
+
+  div {
+    padding: .9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  span {
+    display: block;
+    color: #68768d;
+    font-size: .78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  strong {
+    display: block;
+    margin-top: .35rem;
+    color: #1e293b;
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
+  }
+}
+
 .vertical-chart {
   min-height: 280px;
   display: grid;
@@ -1126,6 +1189,7 @@ apx-chart {
 
   .dashboard-main,
   .charts-main,
+  .simulator-main,
   .projection-summary-grid,
   .return-summary,
   .filters-bar {
@@ -1215,6 +1279,7 @@ apx-chart {
   .metric-card,
   .yield-row div,
   .projection-summary-grid div,
+  .simulator-summary-list div,
   .return-summary div {
     padding: .85rem;
   }

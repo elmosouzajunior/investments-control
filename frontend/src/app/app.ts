@@ -149,6 +149,7 @@ interface IncomeMeasurement extends Measurement {
 interface DashboardPlan {
   planId: string;
   planName: string;
+  currentInvestedCapital: number;
   currentRealBalance: number;
   currentExpectedBalance: number;
   realProjectedBalance: number;
@@ -205,6 +206,13 @@ interface MonthlyChartRow {
   expectedYieldPercent: number;
 }
 
+interface SimulatorProjectionRow {
+  year: number;
+  label: string;
+  balance: number;
+  accumulatedYield: number;
+}
+
 @Component({
   selector: 'app-root',
   imports: [AppShellComponent, CurrencyPipe, DecimalPipe, LoginPageComponent, NgApexchartsModule, NgTemplateOutlet, ReactiveFormsModule],
@@ -236,6 +244,9 @@ export class App {
   selectedDashboardPlanId = '';
   dashboardProjectionYears = 30;
   dashboardReferenceDate = this.todayIsoDate();
+  selectedSimulatorPlanId = '';
+  simulatorMonthlyYieldPercent = 0.8;
+  simulatorMonthlyYieldDisplay = this.formatDecimal(0.8, 2);
   chartRows: MonthlyChartRow[] = [];
   chartMonthlyReturnRows: DashboardAnnualReturnRow[] = [];
   chartBestMonthReturn: DashboardMonthReturn | null = null;
@@ -246,6 +257,11 @@ export class App {
   private chartLoadRequestId = 0;
   selectedInvestment: Investment | null = null;
   initialAmountDisplay = this.formatCurrency(0);
+  planTargetAmountDisplay = this.formatDecimal(0, 2);
+  planTargetTermYearsDisplay = this.formatDecimal(0, 1);
+  operationAmountDisplay = this.formatDecimal(0, 2);
+  measurementMarketValueDisplay = this.formatDecimal(0, 2);
+  measurementIncomeAmountDisplay = this.formatDecimal(0, 2);
   dashboardOpen = true;
   cadastrosOpen = true;
   lancamentosOpen = true;
@@ -409,7 +425,8 @@ export class App {
       ? []
       : [
           { key: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2' },
-          { key: 'charts', label: 'Gráficos', icon: 'bi-bar-chart-line' }
+          { key: 'charts', label: 'Gráficos', icon: 'bi-bar-chart-line' },
+          { key: 'simulator', label: 'Simulador', icon: 'bi-graph-up-arrow' }
         ];
   }
 
@@ -600,6 +617,131 @@ export class App {
     };
   }
 
+  get selectedSimulatorPlan() {
+    return this.dashboardPlans.find((plan) => plan.planId === this.selectedSimulatorPlanId) ?? null;
+  }
+
+  get simulatorProjectionRows(): SimulatorProjectionRow[] {
+    const baseBalance = Math.max(this.selectedSimulatorPlan?.currentRealBalance ?? 0, 0);
+    const monthlyRate = Math.max(this.simulatorMonthlyYieldPercent, 0) / 100;
+    const startYear = 2026;
+    const endYear = 2056;
+
+    return Array.from({ length: endYear - startYear + 1 }, (_, index) => {
+      const elapsedYears = index + 1;
+      const year = startYear + index;
+      const balance = baseBalance * Math.pow(1 + monthlyRate, elapsedYears * 12);
+
+      return {
+        year,
+        label: String(year),
+        balance,
+        accumulatedYield: balance - baseBalance
+      };
+    });
+  }
+
+  get simulatorFinalBalance() {
+    return this.simulatorProjectionRows.at(-1)?.balance ?? 0;
+  }
+
+  get simulatorAccumulatedYield() {
+    return Math.max(this.simulatorFinalBalance - this.simulatorInvestedCapital, 0);
+  }
+
+  get simulatorInvestedCapital() {
+    return Math.max(this.selectedSimulatorPlan?.currentInvestedCapital ?? 0, 0);
+  }
+
+  get simulatorRealizedYield() {
+    const currentBalance = this.selectedSimulatorPlan?.currentRealBalance ?? 0;
+    return currentBalance - this.simulatorInvestedCapital;
+  }
+
+  get simulatorFutureYield() {
+    const currentBalance = this.selectedSimulatorPlan?.currentRealBalance ?? 0;
+    return Math.max(this.simulatorFinalBalance - currentBalance, 0);
+  }
+
+  get simulatorBalanceMultiplier() {
+    const baseBalance = this.selectedSimulatorPlan?.currentRealBalance ?? 0;
+    return baseBalance > 0 ? this.simulatorFinalBalance / baseBalance : 0;
+  }
+
+  get simulatorAnnualYieldPercent() {
+    return (Math.pow(1 + Math.max(this.simulatorMonthlyYieldPercent, 0) / 100, 12) - 1) * 100;
+  }
+
+  get simulatorProjectionChartOptions(): Partial<MonthlyApexChartOptions> {
+    const rows = this.simulatorProjectionRows;
+
+    return {
+      series: [
+        {
+          name: 'Patrimônio projetado',
+          data: rows.map((row) => ({
+            x: row.label,
+            y: Number(row.balance.toFixed(2)),
+            fillColor: row.balance > 1_000_000 ? '#16a34a' : '#2563eb'
+          }))
+        }
+      ],
+      chart: {
+        type: 'bar',
+        height: 360,
+        toolbar: { show: false },
+        animations: { enabled: true, speed: 650 },
+        fontFamily: 'Inter, Segoe UI, sans-serif'
+      },
+      colors: ['#2563eb'],
+      stroke: undefined,
+      markers: undefined,
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          borderRadius: 5,
+          columnWidth: '58%'
+        }
+      },
+      dataLabels: { enabled: false },
+      fill: {
+        opacity: 1
+      },
+      grid: {
+        borderColor: '#e2e8f0',
+        strokeDashArray: 4
+      },
+      legend: {
+        position: 'top',
+        horizontalAlign: 'right',
+        fontSize: '12px',
+        labels: { colors: '#475569' },
+        markers: { shape: 'circle' }
+      },
+      xaxis: {
+        categories: rows.map((row) => row.label),
+        tickAmount: 10,
+        labels: {
+          rotate: -35,
+          style: { colors: '#64748b', fontSize: '11px' }
+        }
+      },
+      yaxis: {
+        title: { text: 'Patrimônio', style: { color: '#64748b', fontSize: '11px', fontWeight: 700 } },
+        labels: {
+          formatter: (value: number) => this.formatCurrency(Number(value)),
+          style: { colors: '#64748b', fontSize: '11px' }
+        }
+      },
+      tooltip: {
+        theme: 'light',
+        y: {
+          formatter: (value: number) => this.formatCurrency(Number(value))
+        }
+      }
+    };
+  }
+
   get selectedContributionInvestmentResponsible() {
     const investmentId = this.contributionForm.controls.investmentId.value;
     const investment = this.investments.find((x) => x.id === investmentId);
@@ -683,6 +825,9 @@ export class App {
     if (this.activePage === 'charts') {
       await this.loadChartsPage();
     }
+    if (this.activePage === 'simulator') {
+      await this.loadSimulatorPage();
+    }
     if (this.activePage === 'investments') {
       await this.loadInvestments();
     }
@@ -712,7 +857,7 @@ export class App {
   }
 
   async loadTenantBaseData() {
-    if (this.activePage === 'dashboard' || this.activePage === 'charts' || this.activePage === 'plans' || this.activePage === 'investments' || this.activePage === 'contributions' || this.activePage === 'withdrawals' || this.activePage === 'income') {
+    if (this.activePage === 'dashboard' || this.activePage === 'charts' || this.activePage === 'simulator' || this.activePage === 'plans' || this.activePage === 'investments' || this.activePage === 'contributions' || this.activePage === 'withdrawals' || this.activePage === 'income') {
       this.plans = await this.get<Plan[]>('/plans');
       this.clearInvalidLaunchSelections();
     }
@@ -830,12 +975,16 @@ export class App {
   openPlanModal() {
     this.editingPlanId = null;
     this.planForm.reset({ name: '', targetAmount: 0, targetTermYears: 0, isActive: true });
+    this.planTargetAmountDisplay = this.formatDecimal(0, 2);
+    this.planTargetTermYearsDisplay = this.formatDecimal(0, 1);
     this.planModalOpen = true;
   }
 
   editPlan(plan: Plan) {
     this.editingPlanId = plan.id;
     this.planForm.patchValue({ ...plan, targetTermYears: plan.targetTermYears ?? 0 });
+    this.planTargetAmountDisplay = this.formatDecimal(plan.targetAmount, 2);
+    this.planTargetTermYearsDisplay = this.formatDecimal(plan.targetTermYears ?? 0, 1);
     this.planModalOpen = true;
   }
 
@@ -843,6 +992,28 @@ export class App {
     this.editingPlanId = null;
     this.planModalOpen = false;
     this.planForm.reset({ name: '', targetAmount: 0, targetTermYears: 0, isActive: true });
+    this.planTargetAmountDisplay = this.formatDecimal(0, 2);
+    this.planTargetTermYearsDisplay = this.formatDecimal(0, 1);
+  }
+
+  updatePlanTargetAmount(value: string) {
+    const amount = this.parseDecimal(value);
+    this.planForm.patchValue({ targetAmount: amount });
+    this.planTargetAmountDisplay = value;
+  }
+
+  formatPlanTargetAmount() {
+    this.planTargetAmountDisplay = this.formatDecimal(this.planForm.controls.targetAmount.value, 2);
+  }
+
+  updatePlanTargetTermYears(value: string) {
+    const years = this.parseDecimal(value);
+    this.planForm.patchValue({ targetTermYears: years });
+    this.planTargetTermYearsDisplay = value;
+  }
+
+  formatPlanTargetTermYears() {
+    this.planTargetTermYearsDisplay = this.formatDecimal(this.planForm.controls.targetTermYears.value, 1);
   }
 
   async saveType() {
@@ -996,6 +1167,7 @@ export class App {
       rows.push({
         planId: plan.id,
         planName: plan.name,
+        currentInvestedCapital: investedBase,
         currentRealBalance,
         currentExpectedBalance,
         realProjectedBalance: realProjectionBalance,
@@ -1015,6 +1187,7 @@ export class App {
 
     this.dashboardPlans = rows;
     this.ensureDashboardPlanSelection();
+    this.ensureSimulatorPlanSelection();
   }
 
   setDashboardPlan(planId: string) {
@@ -1032,6 +1205,25 @@ export class App {
     this.dashboardReferenceDate = value || this.todayIsoDate();
     await this.loadDashboard();
     this.cdr.detectChanges();
+  }
+
+  async loadSimulatorPage() {
+    await this.loadDashboard();
+    this.ensureSimulatorPlanSelection();
+  }
+
+  setSimulatorPlan(planId: string) {
+    this.selectedSimulatorPlanId = this.dashboardPlans.some((plan) => plan.planId === planId) ? planId : '';
+  }
+
+  setSimulatorMonthlyYield(value: string) {
+    const percent = this.parseDecimal(value);
+    this.simulatorMonthlyYieldPercent = Number.isFinite(percent) ? Math.min(Math.max(percent, 0), 10) : 0;
+    this.simulatorMonthlyYieldDisplay = value;
+  }
+
+  formatSimulatorMonthlyYield() {
+    this.simulatorMonthlyYieldDisplay = this.formatDecimal(this.simulatorMonthlyYieldPercent, 2);
   }
 
   async loadContributionPage() {
@@ -1581,6 +1773,39 @@ export class App {
     this.selectedInvestment = investment;
     this.operations = await this.get<Operation[]>(`/investments/${investment.id}/operations`);
     this.measurements = await this.get<Measurement[]>(`/investments/${investment.id}/measurements`);
+    this.operationAmountDisplay = this.formatDecimal(this.operationForm.controls.amount.value, 2);
+    this.measurementMarketValueDisplay = this.formatDecimal(this.measurementForm.controls.marketValue.value, 2);
+    this.measurementIncomeAmountDisplay = this.formatDecimal(this.measurementForm.controls.incomeAmount.value, 2);
+  }
+
+  updateOperationAmount(value: string) {
+    const amount = this.parseDecimal(value);
+    this.operationForm.patchValue({ amount });
+    this.operationAmountDisplay = value;
+  }
+
+  formatOperationAmount() {
+    this.operationAmountDisplay = this.formatDecimal(this.operationForm.controls.amount.value, 2);
+  }
+
+  updateMeasurementMarketValue(value: string) {
+    const amount = this.parseDecimal(value);
+    this.measurementForm.patchValue({ marketValue: amount });
+    this.measurementMarketValueDisplay = value;
+  }
+
+  formatMeasurementMarketValue() {
+    this.measurementMarketValueDisplay = this.formatDecimal(this.measurementForm.controls.marketValue.value, 2);
+  }
+
+  updateMeasurementIncomeAmount(value: string) {
+    const amount = this.parseDecimal(value);
+    this.measurementForm.patchValue({ incomeAmount: amount });
+    this.measurementIncomeAmountDisplay = value;
+  }
+
+  formatMeasurementIncomeAmount() {
+    this.measurementIncomeAmountDisplay = this.formatDecimal(this.measurementForm.controls.incomeAmount.value, 2);
   }
 
   async saveOperation() {
@@ -1678,6 +1903,14 @@ export class App {
 
     const retirementPlan = this.dashboardPlans.find((plan) => plan.planName.toLocaleLowerCase('pt-BR') === 'aposentadoria');
     this.selectedDashboardPlanId = retirementPlan?.planId ?? this.dashboardPlans[0]?.planId ?? '';
+  }
+
+  private ensureSimulatorPlanSelection() {
+    if (this.dashboardPlans.some((plan) => plan.planId === this.selectedSimulatorPlanId)) return;
+
+    const selectedDashboardPlan = this.dashboardPlans.find((plan) => plan.planId === this.selectedDashboardPlanId);
+    const retirementPlan = this.dashboardPlans.find((plan) => plan.planName.toLocaleLowerCase('pt-BR') === 'aposentadoria');
+    this.selectedSimulatorPlanId = selectedDashboardPlan?.planId ?? retirementPlan?.planId ?? this.dashboardPlans[0]?.planId ?? '';
   }
 
   private ensureChartsPlanSelection() {
@@ -1986,6 +2219,23 @@ export class App {
 
     const amount = Number(normalized);
     return Number.isFinite(amount) ? amount : 0;
+  }
+
+  private parseDecimal(value: string) {
+    const normalized = value.replace(/[^\d,.-]/g, '');
+    const decimalText = normalized.includes(',')
+      ? normalized.replace(/\./g, '').replace(',', '.')
+      : normalized;
+
+    const amount = Number(decimalText);
+    return Number.isFinite(amount) ? amount : 0;
+  }
+
+  private formatDecimal(value: number, fractionDigits: number) {
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits
+    }).format(value);
   }
 
   private formatCurrency(value: number) {

@@ -256,6 +256,9 @@
       @if (session.role !== 'Master' && activePage === 'charts') {
         <ng-container *ngTemplateOutlet="chartsTemplate"></ng-container>
       }
+      @if (session.role !== 'Master' && activePage === 'simulator') {
+        <ng-container *ngTemplateOutlet="simulatorTemplate"></ng-container>
+      }
       @if (session.role !== 'Master' && activePage === 'income') {
         <ng-container *ngTemplateOutlet="incomeTemplate"></ng-container>
       }
@@ -581,6 +584,128 @@
   </section>
 </ng-template>
 
+<ng-template #simulatorTemplate>
+  <section class="dashboard-grid simulator-page">
+    @if (selectedSimulatorPlan; as plan) {
+      <header class="dashboard-toolbar">
+        <div class="filters-bar simulator-filters">
+          <div class="form-group">
+            <label>Plano</label>
+            <select class="modern-select" [value]="selectedSimulatorPlanId" (change)="setSimulatorPlan($any($event.target).value)">
+              @for (dashboardPlan of dashboardPlans; track dashboardPlan.planId) {
+                <option [value]="dashboardPlan.planId">{{ dashboardPlan.planName }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Rendimento mensal</label>
+            <div class="percent-control">
+              <input class="modern-select" type="text" inputmode="decimal" [value]="simulatorMonthlyYieldDisplay" (input)="setSimulatorMonthlyYield($any($event.target).value)" (blur)="formatSimulatorMonthlyYield()" />
+              <span>%</span>
+            </div>
+          </div>
+          <div class="form-group slider-group">
+            <label>Ajuste rápido</label>
+            <input class="yield-slider" type="range" min="0" max="3" step="0.05" [value]="simulatorMonthlyYieldPercent" (input)="setSimulatorMonthlyYield($any($event.target).value)" />
+          </div>
+        </div>
+      </header>
+
+      <section class="metric-grid simulator-metrics">
+        <article class="card metric-card">
+          <span>Saldo Atual</span>
+          <strong>{{ plan.currentRealBalance | currency:'BRL' }}</strong>
+        </article>
+        <article class="card metric-card">
+          <span>Rendimento Mensal</span>
+          <strong>{{ simulatorMonthlyYieldPercent | number:'1.2-2' }}%</strong>
+        </article>
+        <article class="card metric-card">
+          <span>Equivalente Anual</span>
+          <strong>{{ simulatorAnnualYieldPercent | number:'1.2-2' }}%</strong>
+        </article>
+        <article class="card metric-card">
+          <span>Patrimônio em 2056</span>
+          <strong class="value-positive">{{ simulatorFinalBalance | currency:'BRL' }}</strong>
+        </article>
+      </section>
+
+      <section class="dashboard-main simulator-main">
+        <article class="card dashboard-card simulator-chart-card">
+          <header>
+            <div>
+              <span>Simulação anual</span>
+              <h2>Evolução patrimonial de 2026 a 2056</h2>
+            </div>
+          </header>
+          @if (plan.currentRealBalance > 0) {
+            <apx-chart
+              [series]="simulatorProjectionChartOptions.series!"
+              [chart]="simulatorProjectionChartOptions.chart!"
+              [xaxis]="simulatorProjectionChartOptions.xaxis!"
+              [yaxis]="simulatorProjectionChartOptions.yaxis!"
+              [dataLabels]="simulatorProjectionChartOptions.dataLabels!"
+              [plotOptions]="simulatorProjectionChartOptions.plotOptions!"
+              [grid]="simulatorProjectionChartOptions.grid!"
+              [tooltip]="simulatorProjectionChartOptions.tooltip!"
+              [legend]="simulatorProjectionChartOptions.legend!"
+              [fill]="simulatorProjectionChartOptions.fill!"
+              [stroke]="simulatorProjectionChartOptions.stroke!"
+              [markers]="simulatorProjectionChartOptions.markers!"
+              [colors]="simulatorProjectionChartOptions.colors!">
+            </apx-chart>
+          } @else {
+            <div class="chart-empty">
+              <p class="empty">Nenhum saldo atual encontrado para simular este plano.</p>
+            </div>
+          }
+        </article>
+
+        <article class="card dashboard-card projection-summary-card simulator-summary-card">
+          <header>
+            <div>
+              <span>Resumo</span>
+              <h2>Resultado da projeção</h2>
+            </div>
+          </header>
+          <div class="simulator-summary-list">
+            <div>
+              <span>Capital investido</span>
+              <strong>{{ simulatorInvestedCapital | currency:'BRL' }}</strong>
+            </div>
+            <div>
+              <span>Juros já realizados</span>
+              <strong [class.value-positive]="simulatorRealizedYield >= 0" [class.value-negative]="simulatorRealizedYield < 0">
+                {{ simulatorRealizedYield | currency:'BRL' }}
+              </strong>
+            </div>
+            <div>
+              <span>Juros futuros estimados</span>
+              <strong class="value-positive">{{ simulatorFutureYield | currency:'BRL' }}</strong>
+            </div>
+            <div>
+              <span>Juros totais até 2056</span>
+              <strong class="value-positive">{{ simulatorAccumulatedYield | currency:'BRL' }}</strong>
+            </div>
+            <div>
+              <span>Multiplicador</span>
+              <strong>{{ simulatorBalanceMultiplier | number:'1.2-2' }}x</strong>
+            </div>
+            <div>
+              <span>Base de cálculo</span>
+              <strong>{{ plan.planName }}</strong>
+            </div>
+          </div>
+        </article>
+      </section>
+    } @else {
+      <section class="card">
+        <p class="empty">Nenhum plano cadastrado para simular evolução patrimonial.</p>
+      </section>
+    }
+  </section>
+</ng-template>
+
 <ng-template #plansTemplate>
   <section class="list-container admin-page">
     <header class="list-header">
@@ -654,11 +779,11 @@
                   </div>
                   <div class="form-group">
                     <label>Taxa projetada ao ano (%)</label>
-                    <input class="modern-select" formControlName="targetAmount" type="number" min="0" max="100" step="0.01" />
+                    <input class="modern-select" type="text" inputmode="decimal" [value]="planTargetAmountDisplay" (input)="updatePlanTargetAmount($any($event.target).value)" (blur)="formatPlanTargetAmount()" />
                   </div>
                   <div class="form-group">
                     <label>Prazo (anos)</label>
-                    <input class="modern-select" formControlName="targetTermYears" type="number" min="0" max="30" step="0.1" />
+                    <input class="modern-select" type="text" inputmode="decimal" [value]="planTargetTermYearsDisplay" (input)="updatePlanTargetTermYears($any($event.target).value)" (blur)="formatPlanTargetTermYears()" />
                   </div>
                   <label class="status-check">
                     <input type="checkbox" formControlName="isActive" />
@@ -1393,7 +1518,7 @@
         <form [formGroup]="operationForm" (ngSubmit)="saveOperation()" class="form-stack">
           <label>Tipo<select formControlName="type"><option value="Contribution">Aporte</option><option value="Withdrawal">Retirada</option><option value="Income">Rendimento</option><option value="Fee">Taxa</option><option value="Tax">Imposto</option><option value="Adjustment">Ajuste</option></select></label>
           <label>Data<input formControlName="operationDate" type="date" /></label>
-          <label>Valor<input formControlName="amount" type="number" /></label>
+          <label>Valor<input [value]="operationAmountDisplay" type="text" inputmode="decimal" (input)="updateOperationAmount($any($event.target).value)" (blur)="formatOperationAmount()" /></label>
           <label>Descrição<input formControlName="description" /></label>
           <button type="button" (click)="saveOperation()">Adicionar operação</button>
         </form>
@@ -1403,8 +1528,8 @@
         <h2>Medição mensal</h2>
         <form [formGroup]="measurementForm" (ngSubmit)="saveMeasurement()" class="form-stack">
           <label>Mês<input formControlName="month" type="date" /></label>
-          <label>Valor de mercado<input formControlName="marketValue" type="number" /></label>
-          <label>Rendimento<input formControlName="incomeAmount" type="number" /></label>
+          <label>Valor de mercado<input [value]="measurementMarketValueDisplay" type="text" inputmode="decimal" (input)="updateMeasurementMarketValue($any($event.target).value)" (blur)="formatMeasurementMarketValue()" /></label>
+          <label>Rendimento<input [value]="measurementIncomeAmountDisplay" type="text" inputmode="decimal" (input)="updateMeasurementIncomeAmount($any($event.target).value)" (blur)="formatMeasurementIncomeAmount()" /></label>
           <label>Observações<input formControlName="notes" /></label>
           <button type="button" (click)="saveMeasurement()">Adicionar medição</button>
         </form>

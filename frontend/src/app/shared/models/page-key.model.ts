@@ -3,6 +3,7 @@ export type PageKey =
   | 'users'
   | 'dashboard'
   | 'charts'
+  | 'simulator'
   | 'plans'
   | 'types'
   | 'institutions'
