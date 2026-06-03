@@ -65,7 +65,13 @@ public sealed class AuthController : ApiControllerBase
     private string GenerateToken(ApplicationUser user, string role)
     {
         var jwt = _configuration.GetSection("Jwt");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!));
+        var jwtKey = jwt["Key"];
+        if (string.IsNullOrWhiteSpace(jwtKey))
+        {
+            throw new InvalidOperationException("Jwt:Key must be configured before generating tokens.");
+        }
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expires = DateTime.UtcNow.AddMinutes(double.Parse(jwt["DurationInMinutes"] ?? "480"));
 
